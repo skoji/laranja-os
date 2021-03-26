@@ -5,16 +5,14 @@
 extern crate rlibc;
 
 use core::fmt::Write;
-use core::panic::PanicInfo;
 use uefi::prelude::*;
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
-}
 
 #[entry]
 fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
+    uefi_services::init(&st).expect_success("Failed to initialize utilities");
+    st.stdout()
+        .reset(false)
+        .expect_success("Failed to reset stdout");
     writeln!(st.stdout(), "Hello from rust").unwrap();
     loop {}
 }
