@@ -7,6 +7,7 @@ extern crate alloc;
 extern crate rlibc;
 use alloc::vec::Vec;
 use core::fmt::Write;
+use uefi::proto::media::file::{File, FileAttribute, FileMode, FileType::Regular};
 use uefi::{prelude::*, proto::media::fs::SimpleFileSystem};
 
 #[entry]
@@ -27,6 +28,17 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
         panic!("no sfs");
     };
     let mut directory = sfs.open_volume().unwrap().unwrap();
+
+    let memmap_file = directory
+        .open("memmap", FileMode::CreateReadWrite, FileAttribute::empty())
+        .unwrap()
+        .unwrap();
+    let memmap_file = memmap_file.into_type().unwrap().unwrap();
+    if let Regular(mut memmap_file) = memmap_file {
+        memmap_file.write("something".as_bytes());
+        memmap_file.close();
+    };
+
     let mut buffer = Vec::with_capacity(128);
     loop {
         let file_info = match directory.read_entry(&mut buffer) {
@@ -53,5 +65,6 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
         .unwrap();
     }
     directory.reset_entry_readout().unwrap().unwrap();
+
     loop {}
 }
