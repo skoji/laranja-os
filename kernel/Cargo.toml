@@ -1,0 +1,8 @@
+[package]
+name = "rmikan-kernel"
+version = "0.1.0"
+authors = ["Satoshi Kojima <skoji@skoji.jp>"]
+edition = "2018"
+
+[dependencies]
+rlibc = "1"

@@ -8,6 +8,7 @@ intelなmacOSを前提にしている。
 Rust nightlyのほか、以下が必要
 
 ```
+brew install x86_64-elf-gcc
 brew install dosfstools
 brew install qemu
 ```
