@@ -8,5 +8,5 @@ qemu-img create -f raw $IMG_NAME 200M
 rm -rf $MOUNT_POINT
 hdiutil attach -mountpoint $MOUNT_POINT $IMG_NAME
 mkdir -p $MOUNT_POINT/EFI/BOOT
-cp ./target/x86_64-unknown-uefi/release/rust-uefi-mikan.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
+cp ./bootloader/target/x86_64-unknown-uefi/release/rust-uefi-mikan.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
 hdiutil detach $MOUNT_POINT

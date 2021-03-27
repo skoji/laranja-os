@@ -14,11 +14,7 @@ brew install qemu
 
 ## Build
 
-```
- cargo +nightly build -Zbuild-std=core,alloc --target  x86_64-unknown-uefi --release
-```
-
-`target/x86_64-unknown-uefi/release/rust-uefi.efi`ができるので、これをUSBメモリの`/EFI/BOOT/BOOTX64.EFI`にコピーする。
+`bootloader`と`kernel`でそれぞれビルドする。
 
 ## QEMUで実行
 
