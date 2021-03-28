@@ -13,6 +13,11 @@ Rust nightlyのほか、qemuなどが必要。『ゼロからのos自作入門�
 
 `bootloader`と`kernel`でそれぞれビルドする。
 
+```
+./bootloade/build.sh
+./kernel/build.sh
+```
+
 ## QEMUで実行
 
 ```
