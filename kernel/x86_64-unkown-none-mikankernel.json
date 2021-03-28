@@ -1,0 +1,42 @@
+{
+  "arch": "x86_64",
+  "cpu": "x86-64",
+  "crt-static-respected": true,
+  "data-layout": "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128",
+  "dynamic-linking": true,
+  "env": "gnu",
+  "executables": true,
+  "has-elf-tls": true,
+  "has-rpath": true,
+  "is-builtin": false,
+  "linker-is-gnu": true,
+  "llvm-target": "x86_64-unknown-none-elf",
+  "max-atomic-width": 64,
+  "position-independent-executables": true,
+  "pre-link-args": {
+    "gcc": [
+      "-Wl,--as-needed",
+      "-Wl,-z,noexecstack",
+      "-m64",
+      "-no-pie"
+    ]
+  },
+  "post-link-args": {
+    "gcc": [
+      "-e kernel_main",
+      "-static",
+      "-nostdlib"
+    ]
+  },
+  "relro-level": "full",
+  "stack-probes": {
+    "kind": "inline-or-call",
+    "min-llvm-version-for-inline": [
+      11,
+      0,
+      1
+    ]
+  },
+  "target-family": "unix",
+  "target-pointer-width": "64"
+}
