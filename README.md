@@ -1,17 +1,13 @@
 # rust UEFI mikan
 
 [『ゼロからのOS自作入門』](https://book.mynavi.jp/ec/products/detail/id=121220)を読みながらRustでかけるところを書いてみる。
-intelなmacOSを前提にしている。
+
+<s>intelなmacOSを前提にしている。</s>
+IntelなLinuxを前提とする。
 
 ## prepare
 
-Rust nightlyのほか、以下が必要
-
-```
-brew install x86_64-elf-gcc
-brew install dosfstools
-brew install qemu
-```
+Rust nightlyのほか、qemuなどが必要。『ゼロからのos自作入門』の環境設定ができていれば基本的にはOKのはず。
 
 ## Build
 
