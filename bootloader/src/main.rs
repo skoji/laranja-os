@@ -55,6 +55,9 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
         let page_buf =
             unsafe { core::slice::from_raw_parts_mut(base_pointer, kernel_file_size as usize) };
         kernel_file.read(page_buf).unwrap().unwrap();
+
+        //
+        let code: extern "C" fn() = unsafe { core::mem::transmute(page_pointer + 24) };
         kernel_file.close();
     };
 
