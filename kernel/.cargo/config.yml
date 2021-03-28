@@ -1,0 +1,4 @@
+[target.*]
+rustflags = [
+    "-C", "link-arg=-Tsrc/linker.ld",
+]

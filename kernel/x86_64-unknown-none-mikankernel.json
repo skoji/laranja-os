@@ -18,11 +18,7 @@
       "-Wl,--as-needed",
       "-Wl,-z,noexecstack",
       "-m64",
-      "-no-pie"
-    ]
-  },
-  "post-link-args": {
-    "gcc": [
+      "-no-pie",
       "-e kernel_main",
       "-static",
       "-nostdlib"
