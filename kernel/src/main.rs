@@ -6,7 +6,7 @@
 extern crate rlibc;
 use core::panic::PanicInfo;
 
-#[link_section = ".text.entry"]
+// #[link_section = ".text.entry"] なくてもいけそう
 #[no_mangle]
 extern "C" fn kernel_main() {
     loop {

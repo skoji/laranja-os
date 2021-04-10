@@ -84,7 +84,16 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
         kernel_file.read(page_buf).unwrap().unwrap();
 
         //
-        let code: extern "C" fn() = unsafe { core::mem::transmute(page_pointer + 24) };
+        let entry_pointer: *mut u64 = (page_pointer + 24) as *mut u64;
+        let entry_pointer_contents = unsafe { *entry_pointer };
+        writeln!(
+            st.stdout(),
+            "entry_pointer_contents: {:x}",
+            entry_pointer_contents
+        );
+        writeln!(st.stdout(), "page pointer {:x}", page_pointer);
+        let code: extern "C" fn() =
+            unsafe { core::mem::transmute(entry_pointer_contents as *const ()) };
         kernel_file.close();
     };
 
