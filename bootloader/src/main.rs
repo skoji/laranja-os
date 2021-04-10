@@ -7,7 +7,14 @@
 extern crate alloc;
 extern crate rlibc;
 use core::fmt::Write;
-use uefi::{prelude::*, proto::media::fs::SimpleFileSystem, table::boot::MemoryDescriptor};
+use uefi::{
+    prelude::*,
+    proto::{
+        console::gop::{FrameBuffer, GraphicsOutput, PixelFormat},
+        media::fs::SimpleFileSystem,
+    },
+    table::boot::MemoryDescriptor,
+};
 use uefi::{
     proto::media::file::{File, FileAttribute, FileInfo, FileMode, FileType::Regular},
     table::boot::{AllocateType, MemoryType},
@@ -93,6 +100,50 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         unsafe {
             for x in &*entry_contents {
                 writeln!(st.stdout(), "{:x}", x);
+            }
+        }
+        // graphics in bootloader
+        if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
+            let gop = gop.expect("Warnings encountered while opening GOP");
+            let gop = unsafe { &mut *gop.get() };
+            writeln!(
+                stdout,
+                "resolution {:?}",
+                gop.current_mode_info().resolution()
+            )
+            .unwrap();
+            writeln!(
+                stdout,
+                "pixel format {:?}",
+                gop.current_mode_info().pixel_format()
+            )
+            .unwrap();
+            let mi = gop.current_mode_info();
+            let stride = mi.stride();
+            let (width, height) = mi.resolution();
+            let mut fb = gop.frame_buffer();
+            type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
+            unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+                fb.write_value(pixel_base, rgb);
+            }
+            unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+                fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]);
+            }
+            let write_pixel: PixelWriter = match mi.pixel_format() {
+                PixelFormat::Rgb => write_pixel_rgb,
+                PixelFormat::Bgr => write_pixel_bgr,
+                _ => {
+                    panic!("This pixel format is not supported by the drawing demo");
+                }
+            };
+            for row in 100..200 {
+                for column in 100..200 {
+                    unsafe {
+                        let pixel_index = (row * stride) + column;
+                        let pixel_base = 4 * pixel_index;
+                        write_pixel(&mut fb, pixel_base, [255, 0, 0]);
+                    }
+                }
             }
         }
         // exit boot service
