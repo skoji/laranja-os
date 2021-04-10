@@ -1,4 +1,5 @@
 #![feature(abi_efiapi)]
+#![feature(asm)]
 #![no_std]
 #![no_main]
 
@@ -16,17 +17,16 @@ use uefi::{
 fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let bt = st.boot_services();
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
-    st.stdout()
-        .reset(false)
-        .expect_success("Failed to reset stdout");
-    writeln!(st.stdout(), "Hello from rust").unwrap();
+    let stdout = st.stdout();
+    stdout.reset(false).expect_success("Failed to reset stdout");
+    writeln!(stdout, "Hello from rust").unwrap();
 
     // open file protocol
     let sfs = if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
         let sfs = sfs.expect("cant open filesystem protocol");
         unsafe { &mut *sfs.get() }
     } else {
-        writeln!(st.stdout(), "no simple filesystem protocol").unwrap();
+        writeln!(stdout, "no simple filesystem protocol").unwrap();
         panic!("no sfs");
     };
     let mut root = sfs.open_volume().unwrap().unwrap();
@@ -68,6 +68,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         let buf = &mut [0u8; BUF_SIZE];
         let info: &mut FileInfo = kernel_file.get_info(buf).unwrap().unwrap();
         let kernel_file_size = info.file_size();
+
         const KERNEL_BASE_ADDRESS: usize = 0x100000;
         let page_pointer = bt
             .allocate_pages(
@@ -77,32 +78,31 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             )
             .unwrap()
             .unwrap();
-        let base_pointer = page_pointer as *mut u8;
-        let page_buf =
-            unsafe { core::slice::from_raw_parts_mut(base_pointer, kernel_file_size as usize) };
+        let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 4096]) };
         kernel_file.read(page_buf).unwrap().unwrap();
 
         //
-        let entry_pointer: *mut u64 = (page_pointer + 24) as *mut u64;
-        let entry_pointer_contents = unsafe { *entry_pointer };
-        writeln!(
-            st.stdout(),
-            "entry_pointer address: {:x}",
-            entry_pointer_contents
-        )
-        .unwrap();
-        let kernel_entry: extern "C" fn() =
-            unsafe { core::mem::transmute(entry_pointer_contents as *const ()) };
+        let entry_pointer_address: *const u64 = (page_pointer + 24) as *const u64;
+        let entry_pointer = unsafe { *entry_pointer_address };
+        writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
+        let entry_pointer = entry_pointer as *const ();
+        let kernel_entry =
+            unsafe { core::mem::transmute::<*const (), extern "C" fn() -> ()>(entry_pointer) };
         kernel_file.close();
-
+        let entry_contents = entry_pointer as *const [u8; 16];
+        unsafe {
+            for x in &*entry_contents {
+                writeln!(st.stdout(), "{:x}", x);
+            }
+        }
         // exit boot service
         let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
         let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
         let (_st, _iter) = st
             .exit_boot_services(handle, &mut mmap_storage[..])
             .expect_success("Failed to exit boot services");
-
-        loop {}
+        kernel_entry();
+        uefi::Status::LOAD_ERROR
     } else {
         panic!("kernel file is not regular file");
     }

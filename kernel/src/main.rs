@@ -9,13 +9,8 @@ use core::panic::PanicInfo;
 // #[link_section = ".text.entry"] なくてもいけそう
 #[no_mangle]
 extern "C" fn kernel_main() {
-    loop {
-        unsafe {
-            //            asm!("mov rax, 60");
-            //            asm!("mov rdx, 0");
-            //            asm!("syscall");
-            asm!("hlt");
-        }
+    unsafe {
+        asm!("hlt");
     }
 }
 
