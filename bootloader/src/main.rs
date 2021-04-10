@@ -5,16 +5,15 @@
 #[macro_use]
 extern crate alloc;
 extern crate rlibc;
-use alloc::vec::Vec;
 use core::fmt::Write;
-use uefi::{prelude::*, proto::media::fs::SimpleFileSystem};
+use uefi::{prelude::*, proto::media::fs::SimpleFileSystem, table::boot::MemoryDescriptor};
 use uefi::{
     proto::media::file::{File, FileAttribute, FileInfo, FileMode, FileType::Regular},
     table::boot::{AllocateType, MemoryType},
 };
 
 #[entry]
-fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
+fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let bt = st.boot_services();
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
     st.stdout()
@@ -88,41 +87,23 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
         let entry_pointer_contents = unsafe { *entry_pointer };
         writeln!(
             st.stdout(),
-            "entry_pointer_contents: {:x}",
+            "entry_pointer address: {:x}",
             entry_pointer_contents
-        );
-        writeln!(st.stdout(), "page pointer {:x}", page_pointer);
-        let code: extern "C" fn() =
-            unsafe { core::mem::transmute(entry_pointer_contents as *const ()) };
-        kernel_file.close();
-    };
-
-    let mut buffer = Vec::with_capacity(128);
-    loop {
-        let file_info = match root.read_entry(&mut buffer) {
-            Ok(completion) => {
-                if let Some(info) = completion.unwrap() {
-                    info
-                } else {
-                    // We've reached the end of the directory
-                    break;
-                }
-            }
-            Err(error) => {
-                // Buffer is not big enough, allocate a bigger one and try again.
-                let min_size = error.data().unwrap();
-                buffer.resize(min_size, 0);
-                continue;
-            }
-        };
-        writeln!(
-            st.stdout(),
-            "{}",
-            format!("Root directory entry: {:?}", file_info)
         )
         .unwrap();
-    }
-    root.reset_entry_readout().unwrap().unwrap();
+        let kernel_entry: extern "C" fn() =
+            unsafe { core::mem::transmute(entry_pointer_contents as *const ()) };
+        kernel_file.close();
 
-    loop {}
+        // exit boot service
+        let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
+        let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
+        let (_st, _iter) = st
+            .exit_boot_services(handle, &mut mmap_storage[..])
+            .expect_success("Failed to exit boot services");
+
+        loop {}
+    } else {
+        panic!("kernel file is not regular file");
+    }
 }
