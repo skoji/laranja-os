@@ -24,6 +24,12 @@
       "-nostdlib"
     ]
   },
+  "post-link-args": {
+    "gcc": [
+      "-static",
+      "-nostdlib"
+    ]
+  },
   "relro-level": "full",
   "stack-probes": {
     "kind": "inline-or-call",

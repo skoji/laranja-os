@@ -1,5 +1,15 @@
 [target.x86_64-unknown-linux-gnu]
 rustflags = [
-    "-C", "link-args=-Tsrc/linker.ld",
-    "-Clink-args=-e kernel_main -static -nostdlib"
+    "-Clink-args=-no-pie",
+    "-Clink-args=-e kernel_main",
+    "-Clink-args=-static -nostdlib",
+    "-Clink-args=-Tsrc/linker.ld"
+]
+
+[target.x86_64-unknown-none-mikankernel]
+rustflags = [
+    "-Clink-args=-no-pie",
+    "-Clink-args=-e kernel_main",
+    "-Clink-args=-static -nostdlib",
+    "-Clink-args=-Tsrc/linker.ld"
 ]
