@@ -32,6 +32,33 @@ fn efi_main(_handle: Handle, st: SystemTable<Boot>) -> Status {
     };
     let mut root = sfs.open_volume().unwrap().unwrap();
 
+    let memmap_file = root
+        .open("memmap", FileMode::CreateReadWrite, FileAttribute::empty())
+        .unwrap()
+        .unwrap();
+    let memmap_file = memmap_file.into_type().unwrap().unwrap();
+    if let Regular(mut memmap_file) = memmap_file {
+        let mmap_buf = &mut [0; 4096 * 4];
+        let (_, memmap_iter) = bt.memory_map(mmap_buf).unwrap().unwrap();
+        memmap_file
+            .write("Index, Type, PhysicalStart, NumberOfPages, Attribute\n".as_bytes())
+            .unwrap()
+            .unwrap();
+        for (i, m) in memmap_iter.enumerate() {
+            memmap_file
+                .write(
+                    format!(
+                        "{}, {:?}, {}, {}, {:?}\n",
+                        i, m.ty, m.phys_start, m.page_count, m.att
+                    )
+                    .as_bytes(),
+                )
+                .unwrap()
+                .unwrap();
+        }
+        memmap_file.close();
+    };
+
     let kernel_file = root
         .open("rmikan-kernel", FileMode::Read, FileAttribute::READ_ONLY)
         .unwrap()
