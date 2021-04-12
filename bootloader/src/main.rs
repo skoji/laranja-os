@@ -124,7 +124,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             //     }
             // }
             // writeln!(stdout, "all white now").unwrap();
-            kernel_entry(fb_pt, fb_size);
 
             // exit boot service
             let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
@@ -132,6 +131,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             let (_st, _iter) = st
                 .exit_boot_services(handle, &mut mmap_storage[..])
                 .expect_success("Failed to exit boot services");
+            kernel_entry(fb_pt, fb_size);
         } else {
             panic!("no ogp");
         }
