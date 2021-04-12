@@ -2,8 +2,7 @@
 
 [『ゼロからのOS自作入門』](https://book.mynavi.jp/ec/products/detail/id=121220)を読みながらRustでかけるところを書いてみる。
 
-<s>intelなmacOSを前提にしている。</s>
-IntelなLinuxを前提とする。
+IntelなLinuxを前提とするが、osbook_day03c-2以降はmacOSでも動く（はず）。
 
 ## tags
 
@@ -12,6 +11,7 @@ IntelなLinuxを前提とする。
 ## prepare
 
 Rust nightlyのほか、qemuなどが必要。『ゼロからのos自作入門』の環境設定ができていれば基本的にはOKのはず。
+macOSでは、Homebrewのllvmをインストールし、llvmのbinにPATHが通っている必要がある。
 
 ## Build
 
