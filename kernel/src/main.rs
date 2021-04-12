@@ -15,7 +15,7 @@ extern "efiapi" fn kernel_main(mut fb_pt: *mut u8, fb_size: usize) {
         while ct < fb_size {
             *fb_pt = 255;
             fb_pt = fb_pt.add(1);
-            ct = ct + 1;
+            ct += 1;
         }
         loop {
             asm!("hlt");
