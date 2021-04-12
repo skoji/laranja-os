@@ -85,7 +85,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             )
             .unwrap()
             .unwrap();
-        let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 4096]) };
+        let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 0x10000]) };
         kernel_file.read(page_buf).unwrap().unwrap();
 
         //
@@ -93,8 +93,11 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         let entry_pointer = unsafe { *entry_pointer_address };
         writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
         let entry_pointer = entry_pointer as *const ();
-        let kernel_entry =
-            unsafe { core::mem::transmute::<*const (), extern "C" fn() -> ()>(entry_pointer) };
+        let kernel_entry = unsafe {
+            core::mem::transmute::<*const (), extern "efiapi" fn(fb: *mut u8, size: usize) -> ()>(
+                entry_pointer,
+            )
+        };
         kernel_file.close();
         let entry_contents = entry_pointer as *const [u8; 16];
         unsafe {
@@ -106,53 +109,32 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
             let gop = gop.expect("Warnings encountered while opening GOP");
             let gop = unsafe { &mut *gop.get() };
-            writeln!(
-                stdout,
-                "resolution {:?}",
-                gop.current_mode_info().resolution()
-            )
-            .unwrap();
-            writeln!(
-                stdout,
-                "pixel format {:?}",
-                gop.current_mode_info().pixel_format()
-            )
-            .unwrap();
             let mi = gop.current_mode_info();
             let stride = mi.stride();
             let (width, height) = mi.resolution();
             let mut fb = gop.frame_buffer();
-            type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
-            unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-                fb.write_value(pixel_base, rgb);
-            }
-            unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-                fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]);
-            }
-            let write_pixel: PixelWriter = match mi.pixel_format() {
-                PixelFormat::Rgb => write_pixel_rgb,
-                PixelFormat::Bgr => write_pixel_bgr,
-                _ => {
-                    panic!("This pixel format is not supported by the drawing demo");
-                }
-            };
-            for row in 100..200 {
-                for column in 100..200 {
-                    unsafe {
-                        let pixel_index = (row * stride) + column;
-                        let pixel_base = 4 * pixel_index;
-                        write_pixel(&mut fb, pixel_base, [255, 0, 0]);
-                    }
-                }
-            }
+            let mut fb_pt = fb.as_mut_ptr();
+            let fb_size = fb.size();
+            // unsafe {
+            //     let mut ct = 0;
+            //     while ct < fb_size {
+            //         *fb_pt = 255;
+            //         fb_pt = fb_pt.add(1);
+            //         ct = ct + 1;
+            //     }
+            // }
+            // writeln!(stdout, "all white now").unwrap();
+            kernel_entry(fb_pt, fb_size);
+
+            // exit boot service
+            let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
+            let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
+            let (_st, _iter) = st
+                .exit_boot_services(handle, &mut mmap_storage[..])
+                .expect_success("Failed to exit boot services");
+        } else {
+            panic!("no ogp");
         }
-        // exit boot service
-        let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
-        let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
-        let (_st, _iter) = st
-            .exit_boot_services(handle, &mut mmap_storage[..])
-            .expect_success("Failed to exit boot services");
-        kernel_entry();
         uefi::Status::LOAD_ERROR
     } else {
         panic!("kernel file is not regular file");
