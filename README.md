@@ -5,6 +5,10 @@
 <s>intelなmacOSを前提にしている。</s>
 IntelなLinuxを前提とする。
 
+## tags
+
+* osbook_day03aは実際にはただしくうごいていない。kernel_mainが呼び出せていないため。
+
 ## prepare
 
 Rust nightlyのほか、qemuなどが必要。『ゼロからのos自作入門』の環境設定ができていれば基本的にはOKのはず。
