@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(abi_efiapi)]
 #![feature(asm)]
 #![feature(lang_items)]
 
@@ -15,7 +14,7 @@ struct FrameBufferInfo {
 }
 
 #[no_mangle]
-extern "efiapi" fn kernel_main(fb: *mut FrameBufferInfo) {
+extern "C" fn kernel_main(fb: *mut FrameBufferInfo) {
     let fb = unsafe { *fb };
     let mut fb_pt = fb.fb;
     let fb_size = fb.size;

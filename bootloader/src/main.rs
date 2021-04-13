@@ -97,7 +97,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
         let entry_pointer = entry_pointer as *const ();
         let kernel_entry = unsafe {
-            core::mem::transmute::<*const (), extern "efiapi" fn(fb: *mut FrameBufferInfo) -> ()>(
+            core::mem::transmute::<*const (), extern "sysv64" fn(fb: *mut FrameBufferInfo) -> ()>(
                 entry_pointer,
             )
         };
