@@ -9,10 +9,7 @@ extern crate rlibc;
 use core::fmt::Write;
 use uefi::{
     prelude::*,
-    proto::{
-        console::gop::{FrameBuffer, GraphicsOutput, PixelFormat},
-        media::fs::SimpleFileSystem,
-    },
+    proto::{console::gop::GraphicsOutput, media::fs::SimpleFileSystem},
     table::boot::MemoryDescriptor,
 };
 use uefi::{
@@ -95,7 +92,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 0x10000]) };
         kernel_file.read(page_buf).unwrap().unwrap();
 
-        //
         let entry_pointer_address: *const u64 = (page_pointer + 24) as *const u64;
         let entry_pointer = unsafe { *entry_pointer_address };
         writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
