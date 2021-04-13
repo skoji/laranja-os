@@ -7,7 +7,7 @@ qemu: $(BOOTIMAGE)
 	./qemu-run.sh
 
 .PHONY: clean
-clean:; 
+clean:; rm -rf kernel/target/*; rm -rf bootloader/target/*; rm $(BOOTIMAGE)
 
 $(BOOTIMAGE): build-kernel build-loader $(KERNEL) $(LOADER)
 	./make-image.sh
