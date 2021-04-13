@@ -1,6 +1,6 @@
 # Laranja OS
 
-An attemnt to implement Rust port of [MikanOS](https://github.com/uchan-nos/mikanos)(an educational OS). 
+An attemnt to implement [MikanOS](https://github.com/uchan-nos/mikanos)(an educational OS) in Rust.
 Mikan means mandarin in Japanese, and laranja means orange in Portuguese.
 
 [『ゼロからのOS自作入門』](https://book.mynavi.jp/ec/products/detail/id=121220)を読みながらRustでかけるところを書いてみる。
