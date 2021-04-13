@@ -20,6 +20,13 @@ use uefi::{
     table::boot::{AllocateType, MemoryType},
 };
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+struct FrameBufferInfo {
+    pub fb: *mut u8,
+    pub size: usize,
+}
+
 #[entry]
 fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let bt = st.boot_services();
@@ -94,7 +101,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
         let entry_pointer = entry_pointer as *const ();
         let kernel_entry = unsafe {
-            core::mem::transmute::<*const (), extern "efiapi" fn(fb: *mut u8, size: usize) -> ()>(
+            core::mem::transmute::<*const (), extern "efiapi" fn(fb: *mut FrameBufferInfo) -> ()>(
                 entry_pointer,
             )
         };
@@ -102,36 +109,27 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         let entry_contents = entry_pointer as *const [u8; 16];
         unsafe {
             for x in &*entry_contents {
-                writeln!(st.stdout(), "{:x}", x);
+                writeln!(st.stdout(), "{:x}", x).unwrap();
             }
         }
         // graphics in bootloader
         if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
             let gop = gop.expect("Warnings encountered while opening GOP");
             let gop = unsafe { &mut *gop.get() };
-            let mi = gop.current_mode_info();
-            let stride = mi.stride();
-            let (width, height) = mi.resolution();
             let mut fb = gop.frame_buffer();
-            let mut fb_pt = fb.as_mut_ptr();
+            let fb_pt = fb.as_mut_ptr();
             let fb_size = fb.size();
-            // unsafe {
-            //     let mut ct = 0;
-            //     while ct < fb_size {
-            //         *fb_pt = 255;
-            //         fb_pt = fb_pt.add(1);
-            //         ct = ct + 1;
-            //     }
-            // }
-            // writeln!(stdout, "all white now").unwrap();
-
             // exit boot service
             let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
             let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
             let (_st, _iter) = st
                 .exit_boot_services(handle, &mut mmap_storage[..])
                 .expect_success("Failed to exit boot services");
-            kernel_entry(fb_pt, fb_size);
+            let mut fb = FrameBufferInfo {
+                fb: fb_pt,
+                size: fb_size,
+            };
+            kernel_entry(&mut fb);
         } else {
             panic!("no ogp");
         }

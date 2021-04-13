@@ -7,9 +7,18 @@
 extern crate rlibc;
 use core::panic::PanicInfo;
 
-// #[link_section = ".text.entry"] なくてもいけそう
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+struct FrameBufferInfo {
+    pub fb: *mut u8,
+    pub size: usize,
+}
+
 #[no_mangle]
-extern "efiapi" fn kernel_main(mut fb_pt: *mut u8, fb_size: usize) {
+extern "efiapi" fn kernel_main(fb: *mut FrameBufferInfo) {
+    let fb = unsafe { *fb };
+    let mut fb_pt = fb.fb;
+    let fb_size = fb.size;
     unsafe {
         let mut ct = 0;
         while ct < fb_size {
