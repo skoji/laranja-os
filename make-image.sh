@@ -1,5 +1,5 @@
 #!/bin/sh
-IMG_NAME=RMIKAN.img
+IMG_NAME=LARANJA.img
 MOUNT_POINT=./mnt
 
 if [ "`uname`" = "Darwin" ]; then
@@ -27,8 +27,8 @@ else
 fi
 
 $SUDO mkdir -p $MOUNT_POINT/EFI/BOOT
-$SUDO cp ./bootloader/target/x86_64-unknown-uefi/release/rust-uefi-mikan.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
-$SUDO cp ./kernel/target/x86_64-unknown-none-mikankernel/release/rmikan-kernel $MOUNT_POINT/rmikan-kernel
+$SUDO cp ./bootloader/target/x86_64-unknown-uefi/release/laranja-loader.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
+$SUDO cp ./kernel/target/x86_64-unknown-none-mikankernel/release/laranja-kernel $MOUNT_POINT/rmikan-kernel
 
 if [ `uname` = "Darwin" ]; then
     hdiutil detach $MOUNT_POINT

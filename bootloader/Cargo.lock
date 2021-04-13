@@ -27,6 +27,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "laranja-loader"
+version = "0.1.0"
+dependencies = [
+ "rlibc",
+ "uefi",
+ "uefi-services",
+]
+
+[[package]]
 name = "log"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -58,15 +67,6 @@ name = "rlibc"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc874b127765f014d792f16763a81245ab80500e2ad921ed4ee9e82481ee08fe"
-
-[[package]]
-name = "rust-uefi-mikan"
-version = "0.1.0"
-dependencies = [
- "rlibc",
- "uefi",
- "uefi-services",
-]
 
 [[package]]
 name = "syn"

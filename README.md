@@ -1,7 +1,9 @@
-# rust UEFI mikan
+# Laranja OS
+
+Attemnt to build Rust port of [MikanOS](https://github.com/uchan-nos/mikanos)(an educational OS). 
+Mikan means mandarin in Japanese, and laranja means orange in Portuguese.
 
 [『ゼロからのOS自作入門』](https://book.mynavi.jp/ec/products/detail/id=121220)を読みながらRustでかけるところを書いてみる。
-
 IntelなLinuxを前提とするが、osbook_day03c-2以降はmacOSでも動く（はず）。
 
 ## tags
