@@ -70,7 +70,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     };
 
     let kernel_file = root
-        .open("rmikan-kernel", FileMode::Read, FileAttribute::READ_ONLY)
+        .open("laranja-kernel", FileMode::Read, FileAttribute::READ_ONLY)
         .unwrap()
         .unwrap();
     let kernel_file = kernel_file.into_type().unwrap().unwrap();

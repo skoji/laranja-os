@@ -20,15 +20,13 @@ mkdir -p $MOUNT_POINT
 
 if [ "`uname`" = "Darwin" ]; then
     hdiutil attach -mountpoint $MOUNT_POINT $IMG_NAME
-    SUDO=''
 else
     sudo mount -o loop $IMG_NAME $MOUNT_POINT
-    SUDO=sudo
 fi
 
 $SUDO mkdir -p $MOUNT_POINT/EFI/BOOT
 $SUDO cp ./bootloader/target/x86_64-unknown-uefi/release/laranja-loader.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
-$SUDO cp ./kernel/target/x86_64-unknown-none-mikankernel/release/laranja-kernel $MOUNT_POINT/rmikan-kernel
+$SUDO cp ./kernel/target/x86_64-unknown-none-mikankernel/release/laranja-kernel $MOUNT_POINT/laranja-kernel
 
 if [ `uname` = "Darwin" ]; then
     hdiutil detach $MOUNT_POINT

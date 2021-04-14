@@ -12,8 +12,8 @@ clean:; rm -rf kernel/target/*; rm -rf bootloader/target/*; rm -f $(BOOTIMAGE)
 $(BOOTIMAGE): build-kernel build-loader $(KERNEL) $(LOADER)
 	./make-image.sh
 
-.PHONY: kernel
+.PHONY: build-kernel
 build-kernel:;	./kernel/build.sh
-.PHONY: loader
+.PHONY: build-loader
 build-loader:;	./bootloader/build.sh
 
