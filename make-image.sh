@@ -13,7 +13,7 @@ fi
 rm -f $IMG_NAME
 qemu-img create -f raw $IMG_NAME 200M
 
-$MKFS_FAT -n 'RMIKAN OS' -s 2 -f 2 -R 32 -F 32 $IMG_NAME
+$MKFS_FAT -n 'LARANJA OS' -s 2 -f 2 -R 32 -F 32 $IMG_NAME
 
 rm -rf $MOUNT_POINT
 mkdir -p $MOUNT_POINT
