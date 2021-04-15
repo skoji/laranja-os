@@ -74,63 +74,62 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         .unwrap()
         .unwrap();
     let kernel_file = kernel_file.into_type().unwrap().unwrap();
-    if let Regular(mut kernel_file) = kernel_file {
-        const BUF_SIZE: usize = 4000;
-        let buf = &mut [0u8; BUF_SIZE];
-        let info: &mut FileInfo = kernel_file.get_info(buf).unwrap().unwrap();
-        let kernel_file_size = info.file_size();
+    let mut kernel_file = match kernel_file {
+        Regular(f) => f,
+        _ => panic!("kernel file is not regular file"),
+    };
+    const BUF_SIZE: usize = 4000;
+    let buf = &mut [0u8; BUF_SIZE];
+    let info: &mut FileInfo = kernel_file.get_info(buf).unwrap().unwrap();
+    let kernel_file_size = info.file_size();
 
-        const KERNEL_BASE_ADDRESS: usize = 0x100000;
-        let page_pointer = bt
-            .allocate_pages(
-                AllocateType::Address(KERNEL_BASE_ADDRESS),
-                MemoryType::LOADER_DATA,
-                (kernel_file_size as usize + 0xfff) / 0x1000,
-            )
-            .unwrap()
-            .unwrap();
-        let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 0x10000]) };
-        kernel_file.read(page_buf).unwrap().unwrap();
+    const KERNEL_BASE_ADDRESS: usize = 0x100000;
+    let page_pointer = bt
+        .allocate_pages(
+            AllocateType::Address(KERNEL_BASE_ADDRESS),
+            MemoryType::LOADER_DATA,
+            (kernel_file_size as usize + 0xfff) / 0x1000,
+        )
+        .unwrap()
+        .unwrap();
+    let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 0x10000]) };
+    kernel_file.read(page_buf).unwrap().unwrap();
 
-        let entry_pointer_address: *const u64 = (page_pointer + 24) as *const u64;
-        let entry_pointer = unsafe { *entry_pointer_address };
-        writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
-        let entry_pointer = entry_pointer as *const ();
-        let kernel_entry = unsafe {
-            core::mem::transmute::<*const (), extern "sysv64" fn(fb: *mut FrameBufferInfo) -> ()>(
-                entry_pointer,
-            )
-        };
-        kernel_file.close();
-        let entry_contents = entry_pointer as *const [u8; 16];
-        unsafe {
-            for x in &*entry_contents {
-                writeln!(st.stdout(), "{:x}", x).unwrap();
-            }
+    let entry_pointer_address: *const u64 = (page_pointer + 24) as *const u64;
+    let entry_pointer = unsafe { *entry_pointer_address };
+    writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
+    let entry_pointer = entry_pointer as *const ();
+    let kernel_entry = unsafe {
+        core::mem::transmute::<*const (), extern "sysv64" fn(fb: *mut FrameBufferInfo) -> ()>(
+            entry_pointer,
+        )
+    };
+    kernel_file.close();
+    let entry_contents = entry_pointer as *const [u8; 16];
+    unsafe {
+        for x in &*entry_contents {
+            writeln!(st.stdout(), "{:x}", x).unwrap();
         }
-        // graphics in bootloader
-        if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
-            let gop = gop.expect("Warnings encountered while opening GOP");
-            let gop = unsafe { &mut *gop.get() };
-            let mut fb = gop.frame_buffer();
-            let fb_pt = fb.as_mut_ptr();
-            let fb_size = fb.size();
-            // exit boot service
-            let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
-            let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
-            let (_st, _iter) = st
-                .exit_boot_services(handle, &mut mmap_storage[..])
-                .expect_success("Failed to exit boot services");
-            let mut fb = FrameBufferInfo {
-                fb: fb_pt,
-                size: fb_size,
-            };
-            kernel_entry(&mut fb);
-        } else {
-            panic!("no ogp");
-        }
-        uefi::Status::LOAD_ERROR
-    } else {
-        panic!("kernel file is not regular file");
     }
+    let gop = if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
+        let gop = gop.expect("Warnings encountered while opening GOP");
+        unsafe { &mut *gop.get() }
+    } else {
+        panic!("no ogp");
+    };
+    let mut fb = gop.frame_buffer();
+    let fb_pt = fb.as_mut_ptr();
+    let fb_size = fb.size();
+    // exit boot service
+    let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
+    let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
+    let (_st, _iter) = st
+        .exit_boot_services(handle, &mut mmap_storage[..])
+        .expect_success("Failed to exit boot services");
+    let mut fb = FrameBufferInfo {
+        fb: fb_pt,
+        size: fb_size,
+    };
+    kernel_entry(&mut fb);
+    uefi::Status::SUCCESS
 }
