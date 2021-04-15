@@ -7,13 +7,23 @@ qemu: $(BOOTIMAGE)
 	./qemu-run.sh
 
 .PHONY: clean
-clean:; rm -rf kernel/target/*; rm -rf bootloader/target/*; rm -f $(BOOTIMAGE)
+clean: clean-loader clean-kernel
+	rm -f $(BOOTIMAGE)
 
-$(BOOTIMAGE): build-kernel build-loader $(KERNEL) $(LOADER)
+$(BOOTIMAGE): build $(KERNEL) $(LOADER)
 	./make-image.sh
 
-.PHONY: build-kernel
-build-kernel:;	pushd kernel && cargo build --release && popd
-.PHONY: build-loader
-build-loader:;	pushd bootloader && cargo build --release && popd
+.PHONY: build
+build: build-kernel build-loader
 
+.PHONY: build-kernel
+build-kernel:;	cd kernel && cargo build --release
+
+.PHONY: build-loader
+build-loader:;	cd bootloader && cargo build --release
+
+.PHONY: clean-kernel
+clean-kernel:; cd kernel && cargo clean
+
+.PHONY: clean-loader
+clean-loader:; cd bootloader && cargo clean
