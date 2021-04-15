@@ -17,17 +17,5 @@ macOSでは、Homebrewのllvmをインストールし、llvmのbinにPATHが通�
 
 ## Build
 
-`bootloader`と`kernel`でそれぞれビルドする。
-
-```
-./bootloade/build.sh
-./kernel/build.sh
-```
-
-## QEMUで実行
-
-```
-./make-image.sh
-./qemu-run.sh
-```
+`make`でbootloaderとkernelをビルド・QEMUで実行まで行う。
 
