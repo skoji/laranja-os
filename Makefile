@@ -13,7 +13,7 @@ $(BOOTIMAGE): build-kernel build-loader $(KERNEL) $(LOADER)
 	./make-image.sh
 
 .PHONY: build-kernel
-build-kernel:;	./kernel/build.sh
+build-kernel:;	pushd kernel && cargo build --release && popd
 .PHONY: build-loader
-build-loader:;	./bootloader/build.sh
+build-loader:;	pushd bootloader && cargo build --release && popd
 
