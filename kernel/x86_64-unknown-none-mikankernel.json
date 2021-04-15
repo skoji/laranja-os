@@ -6,6 +6,8 @@
   "dynamic-linking": true,
   "env": "gnu",
   "executables": true,
+  "linker": "ld.lld",
+  "linker-flavor": "ld",
   "has-elf-tls": true,
   "has-rpath": true,
   "is-builtin": false,
@@ -13,23 +15,17 @@
   "llvm-target": "x86_64-unknown-none-elf",
   "max-atomic-width": 64,
   "position-independent-executables": true,
-  "pre-link-args": {
-    "gcc": [
-      "-Wl,--as-needed",
-      "-Wl,-z,noexecstack",
-      "-m64",
-      "-no-pie",
-      "-e kernel_main",
-      "-static",
-      "-nostdlib"
-    ]
-  },
   "post-link-args": {
-    "gcc": [
+    "ld": [
+      "-nmagic",
+      "-entry=kernel_main",
       "-static",
-      "-nostdlib"
+      "-nostdlib",
+      "-image-base=0x100000"
     ]
   },
+  "relocation-model": "static",
+  "no-redzone": "yes",
   "relro-level": "full",
   "stack-probes": {
     "kind": "inline-or-call",

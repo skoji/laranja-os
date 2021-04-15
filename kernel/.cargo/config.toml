@@ -4,12 +4,3 @@ target = "x86_64-unknown-none-mikankernel.json"
 [unstable]
 build-std = ["core", "alloc"]
 
-[target.x86_64-unknown-none-mikankernel]
-linker = "ld.lld"
-rustflags = [
-    "-C", "no-redzone=yes",
-    "-C", "relocation-model=static",
-    "-C", "link-args=-nmagic",
-    "-C", "link-args=-entry=kernel_main -static -nostdlib",
-    "-C", "link-args=--image-base=0x100000"
-]
