@@ -6,10 +6,12 @@
 #[macro_use]
 extern crate alloc;
 extern crate rlibc;
+use console::gop;
 use core::fmt::Write;
+use proto::console;
 use uefi::{
     prelude::*,
-    proto::{console::gop::GraphicsOutput, media::fs::SimpleFileSystem},
+    proto::{self, console::gop::GraphicsOutput, media::fs::SimpleFileSystem},
     table::boot::MemoryDescriptor,
 };
 use uefi::{
@@ -100,9 +102,10 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
     let entry_pointer = entry_pointer as *const ();
     let kernel_entry = unsafe {
-        core::mem::transmute::<*const (), extern "sysv64" fn(fb: *mut FrameBufferInfo) -> ()>(
-            entry_pointer,
-        )
+        core::mem::transmute::<
+            *const (),
+            extern "sysv64" fn(fb: *mut FrameBufferInfo, mi: *mut gop::ModeInfo) -> (),
+        >(entry_pointer)
     };
     kernel_file.close();
     let entry_contents = entry_pointer as *const [u8; 16];
@@ -117,6 +120,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     } else {
         panic!("no ogp");
     };
+    let mut mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
     let fb_pt = fb.as_mut_ptr();
     let fb_size = fb.size();
@@ -130,6 +134,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         fb: fb_pt,
         size: fb_size,
     };
-    kernel_entry(&mut fb);
+    kernel_entry(&mut fb, &mut mi);
     uefi::Status::SUCCESS
 }
