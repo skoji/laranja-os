@@ -34,6 +34,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let stdout = st.stdout();
     stdout.reset(false).expect_success("Failed to reset stdout");
     writeln!(stdout, "Hello from rust").unwrap();
+    writeln!(stdout, "Firmware Vendor {}", st.firmware_vendor()).unwrap();
 
     // open file protocol
     let sfs = if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
