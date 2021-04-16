@@ -15,7 +15,7 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let (width, height) = graphics.resolution();
 
     unsafe {
-        for y in 0..(height / 2) {
+        for y in height / 2..(height) {
             for x in 0..(width / 2) {
                 graphics.write_pixel(x, y, PixelColor(250, 0, 0));
             }
