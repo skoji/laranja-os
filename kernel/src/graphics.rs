@@ -131,11 +131,10 @@ impl Graphics {
         }
     }
 
-    /// Write to th index-th byte of the framebuffer
+    /// Write to the pixel of the buffer
     ///
-    /// # Safety
-    /// This is unsafe : no bound check.
-    pub unsafe fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
+    pub fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
+        // TODO: don't panic.
         if x > self.mi.hor_res as usize {
             panic!("bad x coord");
         }
@@ -144,7 +143,9 @@ impl Graphics {
         }
         let pixel_index = y * (self.mi.stride as usize) + x;
         let base = 4 * pixel_index;
-        (self.pixel_writer)(&mut self.fb, base, color);
+        unsafe {
+            (self.pixel_writer)(&mut self.fb, base, color);
+        }
     }
 
     pub fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &PixelColor) {
@@ -154,9 +155,7 @@ impl Graphics {
         for (dy, line) in FONT_A.iter().enumerate() {
             for dx in 0..8 {
                 if (line << dx) & 0x80 != 0 {
-                    unsafe {
-                        self.write_pixel(x + dx, y + dy, &color);
-                    }
+                    self.write_pixel(x + dx, y + dy, &color);
                 }
             }
         }
@@ -168,11 +167,9 @@ impl Graphics {
 
     pub fn clear(&mut self, color: &PixelColor) {
         let (width, height) = self.resolution();
-        unsafe {
-            for y in 0..height {
-                for x in 0..width {
-                    self.write_pixel(x, y, color);
-                }
+        for y in 0..height {
+            for x in 0..width {
+                self.write_pixel(x, y, color);
             }
         }
     }
