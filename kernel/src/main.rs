@@ -12,14 +12,10 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let fb = unsafe { *fb };
     let mi = unsafe { *mi };
     let mut graphics = Graphics::new(fb, mi);
-    let (width, height) = graphics.resolution();
+
+    graphics.clear(&PixelColor(64, 64, 64));
 
     unsafe {
-        for y in height / 2..(height) {
-            for x in 0..(width / 2) {
-                graphics.write_pixel(x, y, PixelColor(250, 0, 0));
-            }
-        }
         loop {
             asm!("hlt");
         }

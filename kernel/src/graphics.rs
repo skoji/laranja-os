@@ -85,15 +85,15 @@ pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
 pub struct Graphics {
     fb: FrameBuffer,
     mi: ModeInfo,
-    pixel_writer: unsafe fn(&mut FrameBuffer, usize, PixelColor),
+    pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
 }
 
 impl Graphics {
     pub fn new(fb: FrameBuffer, mi: ModeInfo) -> Self {
-        unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: PixelColor) {
+        unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.0, rgb.1, rgb.2]);
         }
-        unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, index: usize, rgb: PixelColor) {
+        unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.2, rgb.1, rgb.0]);
         }
         let pixel_writer = match mi.format {
@@ -115,7 +115,7 @@ impl Graphics {
     ///
     /// # Safety
     /// This is unsafe : no bound check.
-    pub unsafe fn write_pixel(&mut self, x: usize, y: usize, color: PixelColor) {
+    pub unsafe fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
         if x > self.mi.hor_res as usize {
             panic!("bad x coord");
         }
@@ -131,6 +131,16 @@ impl Graphics {
         self.mi.resolution()
     }
 
+    pub fn clear(&mut self, color: &PixelColor) {
+        let (width, height) = self.resolution();
+        unsafe {
+            for y in 0..height {
+                for x in 0..width {
+                    self.write_pixel(x, y, color);
+                }
+            }
+        }
+    }
     pub fn fb(&self) -> FrameBuffer {
         self.fb
     }
