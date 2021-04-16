@@ -8,5 +8,5 @@ edition = "2018"
 [dependencies]
 uefi = { version = "0.8.0", features = ["exts", "alloc"] }
 uefi-services = "0.5.0"
-
 rlibc = "1"
+elf_rs = "0.1"
