@@ -17,11 +17,9 @@
   "position-independent-executables": true,
   "post-link-args": {
     "ld": [
-      "-nmagic",
       "-entry=kernel_main",
       "-static",
-      "-nostdlib",
-      "-image-base=0x100000"
+      "-nostdlib"
     ]
   },
   "relocation-model": "static",
