@@ -6,16 +6,20 @@
 extern crate rlibc;
 use core::panic::PanicInfo;
 
-use laranja_kernel::graphics::{FrameBuffer, ModeInfo};
+use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 
 #[no_mangle]
-extern "C" fn kernel_main(fb: *mut FrameBuffer, _mi: *mut ModeInfo) {
-    let mut fb = unsafe { *fb };
+extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
+    let fb = unsafe { *fb };
+    let mi = unsafe { *mi };
+    let mut graphics = Graphics::new(fb, mi);
+    let (width, height) = graphics.resolution();
+
     unsafe {
-        let mut ct = 0;
-        while ct < fb.size() {
-            fb.write_byte(ct, 255);
-            ct += 1;
+        for y in 0..(height / 2) {
+            for x in 0..(width / 2) {
+                graphics.write_pixel(x, y, PixelColor(250, 0, 0));
+            }
         }
         loop {
             asm!("hlt");

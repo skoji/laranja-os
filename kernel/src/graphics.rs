@@ -1,5 +1,4 @@
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
+#[derive(Debug, Copy, Clone)]
 pub enum PixelFormat {
     /// Each pixel is 32-bit long, with 24-bit RGB, and the last byte is reserved.
     Rgb = 0,
@@ -42,6 +41,12 @@ pub struct ModeInfo {
     pub stride: u32,
 }
 
+impl ModeInfo {
+    pub fn resolution(&self) -> (usize, usize) {
+        (self.hor_res as usize, self.ver_res as usize)
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FrameBuffer {
@@ -64,5 +69,73 @@ impl FrameBuffer {
     /// This is unsafe : no bound check.
     pub unsafe fn write_byte(&mut self, index: usize, val: u8) {
         self.base.add(index).write_volatile(val);
+    }
+
+    /// Write to th index-th byte of the framebuffer
+    ///
+    /// # Safety
+    /// This is unsafe : no bound check.
+    pub unsafe fn write_value(&mut self, index: usize, value: [u8; 3]) {
+        (self.base.add(index) as *mut [u8; 3]).write_volatile(value)
+    }
+}
+
+pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
+
+pub struct Graphics {
+    fb: FrameBuffer,
+    mi: ModeInfo,
+    pixel_writer: unsafe fn(&mut FrameBuffer, usize, PixelColor),
+}
+
+impl Graphics {
+    pub fn new(fb: FrameBuffer, mi: ModeInfo) -> Self {
+        unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: PixelColor) {
+            fb.write_value(index, [rgb.0, rgb.1, rgb.2]);
+        }
+        unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, index: usize, rgb: PixelColor) {
+            fb.write_value(index, [rgb.2, rgb.1, rgb.0]);
+        }
+        let pixel_writer = match mi.format {
+            PixelFormat::Rgb => write_pixel_rgb,
+            PixelFormat::Bgr => write_pixel_bgr,
+            _ => {
+                panic!("This pixel format is not supported by the drawing demo");
+            }
+        };
+
+        Graphics {
+            fb,
+            mi,
+            pixel_writer,
+        }
+    }
+
+    /// Write to th index-th byte of the framebuffer
+    ///
+    /// # Safety
+    /// This is unsafe : no bound check.
+    pub unsafe fn write_pixel(&mut self, x: usize, y: usize, color: PixelColor) {
+        if x > self.mi.hor_res as usize {
+            panic!("bad x coord");
+        }
+        if y > self.mi.ver_res as usize {
+            panic!("bad x coord");
+        }
+        let pixel_index = y * (self.mi.stride as usize) + x;
+        let base = 4 * pixel_index;
+        (self.pixel_writer)(&mut self.fb, base, color);
+    }
+
+    pub fn resolution(&self) -> (usize, usize) {
+        self.mi.resolution()
+    }
+
+    pub fn fb(&self) -> FrameBuffer {
+        self.fb
+    }
+
+    pub fn mi(&self) -> ModeInfo {
+        self.mi
     }
 }
