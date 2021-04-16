@@ -8,6 +8,7 @@ extern crate alloc;
 extern crate rlibc;
 use console::gop;
 use core::fmt::Write;
+use elf_rs::*;
 use proto::console;
 use uefi::{
     prelude::*,
@@ -85,29 +86,77 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let info: &mut FileInfo = kernel_file.get_info(buf).unwrap().unwrap();
     let kernel_file_size = info.file_size();
 
-    const KERNEL_BASE_ADDRESS: usize = 0x100000;
-    let page_pointer = bt
-        .allocate_pages(
-            AllocateType::Address(KERNEL_BASE_ADDRESS),
+    let kernel_file_buf = bt
+        .allocate_pool(
             MemoryType::LOADER_DATA,
             (kernel_file_size as usize + 0xfff) / 0x1000,
         )
         .unwrap()
         .unwrap();
-    let page_buf = unsafe { &mut *(page_pointer as *mut [u8; 0x10000]) };
-    kernel_file.read(page_buf).unwrap().unwrap();
+    let entry_pointer_address: *const u64 = (kernel_file_buf as u64 + 24) as *const u64;
+    let kernel_file_buf =
+        unsafe { core::slice::from_raw_parts_mut(kernel_file_buf, kernel_file_size as usize) };
+    kernel_file.read(kernel_file_buf).unwrap().unwrap();
+    kernel_file.close();
 
-    let entry_pointer_address: *const u64 = (page_pointer + 24) as *const u64;
-    let entry_pointer = unsafe { *entry_pointer_address };
-    writeln!(stdout, "entry pointer: {:x}", entry_pointer).unwrap();
-    let entry_pointer = entry_pointer as *const ();
+    let elf = match Elf::from_bytes(&kernel_file_buf).unwrap() {
+        Elf::Elf64(e) => e,
+        Elf::Elf32(_) => {
+            panic!("Elf32 is not supported");
+        }
+    };
+
+    let mut kernel_first = u64::max_value();
+    let mut kernel_last = u64::min_value();
+    for h in elf.program_header_iter() {
+        let header = h.ph;
+        if matches!(header.ph_type(), ProgramType::LOAD) {
+            let v = header.vaddr();
+            let len = header.memsz();
+            kernel_first = core::cmp::min(kernel_first, v);
+            kernel_last = core::cmp::max(kernel_last, v + len);
+        }
+    }
+    let kernel_first = kernel_first as usize / 0x1000 * 0x1000;
+    let load_size = kernel_last as usize - kernel_first;
+    let n_of_pages = (load_size + 0xfff) / 0x1000;
+    writeln!(
+        st.stdout(),
+        "kernel_first {:x}, last {:x}, pages {:?}",
+        kernel_first,
+        kernel_last,
+        n_of_pages
+    )
+    .unwrap();
+    bt.allocate_pages(
+        AllocateType::Address(kernel_first),
+        MemoryType::LOADER_DATA,
+        n_of_pages,
+    )
+    .unwrap()
+    .unwrap();
+
+    // load kernel
+    for h in elf.program_header_iter() {
+        let header = h.ph;
+        if matches!(header.ph_type(), ProgramType::LOAD) {
+            let segment = h.segment();
+            let dest = header.vaddr();
+            let len = header.filesz();
+            let dest = unsafe { core::slice::from_raw_parts_mut(dest as *mut u8, len as usize) };
+            (0..len as usize).for_each(|i| {
+                dest[i] = segment[i];
+            });
+        }
+    }
+
+    let entry_pointer = unsafe { *entry_pointer_address } as *const ();
     let kernel_entry = unsafe {
         core::mem::transmute::<
             *const (),
             extern "sysv64" fn(fb: *mut FrameBufferInfo, mi: *mut gop::ModeInfo) -> (),
         >(entry_pointer)
     };
-    kernel_file.close();
     let entry_contents = entry_pointer as *const [u8; 16];
     unsafe {
         for x in &*entry_contents {
