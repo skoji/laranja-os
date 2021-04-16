@@ -1,4 +1,4 @@
-KERNEL = ./kernel/target/x86_64-unknown-none-mikankernel/release/laranja-kernel
+KERNEL = ./kernel/target/x86_64-unknown-none-laranjakernel/release/laranja-kernel
 LOADER = ./bootloader/target/x86_64-unknown-uefi/release/laranja-loader.efi
 BOOTIMAGE = LARANJA.img
 
