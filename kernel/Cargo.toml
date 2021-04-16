@@ -5,4 +5,4 @@ authors = ["Satoshi Kojima <skoji@skoji.jp>"]
 edition = "2018"
 
 [dependencies]
-rlibc = "1"
+

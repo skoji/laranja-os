@@ -3,7 +3,6 @@
 #![feature(asm)]
 #![feature(lang_items)]
 
-extern crate rlibc;
 use core::panic::PanicInfo;
 
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
