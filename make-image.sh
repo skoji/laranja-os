@@ -24,9 +24,7 @@ else
     sudo mount -o loop $IMG_NAME $MOUNT_POINT
 fi
 
-$SUDO mkdir -p $MOUNT_POINT/EFI/BOOT
-$SUDO cp ./bootloader/target/x86_64-unknown-uefi/release/laranja-loader.efi $MOUNT_POINT/EFI/BOOT/BOOTX64.EFI
-$SUDO cp ./kernel/target/x86_64-unknown-none-laranjakernel//release/laranja-kernel $MOUNT_POINT/laranja-kernel
+$SUDO ./write-object-to.sh $MOUNT_POINT
 
 if [ `uname` = "Darwin" ]; then
     hdiutil detach $MOUNT_POINT
