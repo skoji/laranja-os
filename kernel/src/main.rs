@@ -14,7 +14,9 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let mut graphics = Graphics::new(fb, mi);
 
     graphics.clear(&PixelColor(64, 64, 64));
-
+    graphics.write_ascii(100, 100, 'A', &PixelColor(255, 255, 255));
+    graphics.write_ascii(108, 100, 'A', &PixelColor(255, 255, 255));
+    graphics.write_ascii(116, 100, 'A', &PixelColor(255, 255, 255));
     unsafe {
         loop {
             asm!("hlt");

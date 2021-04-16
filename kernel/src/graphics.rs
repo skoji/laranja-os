@@ -1,4 +1,24 @@
+pub const FONT_A: [u8; 16] = [
+    0b00000000, //
+    0b00011000, //    **
+    0b00011000, //    **
+    0b00011000, //    **
+    0b00011000, //    **
+    0b00100100, //   *  *
+    0b00100100, //   *  *
+    0b00100100, //   *  *
+    0b00100100, //   *  *
+    0b01111110, //  ******
+    0b01000010, //  *    *
+    0b01000010, //  *    *
+    0b01000010, //  *    *
+    0b11100111, // ***  ***
+    0b00000000, //
+    0b00000000, //
+];
+
 #[derive(Debug, Copy, Clone)]
+#[repr(u32)]
 pub enum PixelFormat {
     /// Each pixel is 32-bit long, with 24-bit RGB, and the last byte is reserved.
     Rgb = 0,
@@ -125,6 +145,21 @@ impl Graphics {
         let pixel_index = y * (self.mi.stride as usize) + x;
         let base = 4 * pixel_index;
         (self.pixel_writer)(&mut self.fb, base, color);
+    }
+
+    pub fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &PixelColor) {
+        if c != 'A' {
+            return;
+        }
+        for (dy, line) in FONT_A.iter().enumerate() {
+            for dx in 0..8 {
+                if (line << dx) & 0x80 != 0 {
+                    unsafe {
+                        self.write_pixel(x + dx, y + dy, &color);
+                    }
+                }
+            }
+        }
     }
 
     pub fn resolution(&self) -> (usize, usize) {
