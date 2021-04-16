@@ -45,6 +45,24 @@ pub struct ModeInfo {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FrameBuffer {
-    pub fb: *mut u8,
-    pub size: usize,
+    base: *mut u8,
+    size: usize,
+}
+
+impl FrameBuffer {
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.base
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    /// Write to th index-th byte of the framebuffer
+    ///
+    /// # Safety
+    /// This is unsafe : no bound check.
+    pub unsafe fn write_byte(&mut self, index: usize, val: u8) {
+        self.base.add(index).write_volatile(val);
+    }
 }
