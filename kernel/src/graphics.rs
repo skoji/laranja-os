@@ -117,11 +117,9 @@ impl Graphics {
     /// # Safety
     /// This is unsafe : handle raw pointers.
     pub unsafe fn initialize_instance(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
-        let fb = *fb;
-        let mi = *mi;
         core::ptr::write(
             RAW_GRAPHICS.as_mut_ptr() as *mut Graphics,
-            Graphics::new(fb, mi),
+            Graphics::new(*fb, *mi),
         );
         GRAPHICS_INITIALIZED = true;
     }
