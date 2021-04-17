@@ -3,33 +3,18 @@ use crate::ascii_font::FONTS;
 #[derive(Debug, Copy, Clone)]
 #[repr(u32)]
 pub enum PixelFormat {
-    /// Each pixel is 32-bit long, with 24-bit RGB, and the last byte is reserved.
     Rgb = 0,
-    /// Each pixel is 32-bit long, with 24-bit BGR, and the last byte is reserved.
     Bgr,
-    /// Custom pixel format, check the associated bitmask.
     Bitmask,
-    /// The graphics mode does not support drawing directly to the frame buffer.
-    ///
-    /// This means you will have to use the `blt` function which will
-    /// convert the graphics data to the device's internal pixel format.
     BltOnly,
-    // SAFETY: UEFI also defines a PixelFormatMax variant, and states that all
-    //         valid enum values are guaranteed to be smaller. Since that is the
-    //         case, adding a new enum variant would be a breaking change, so it
-    //         is safe to model this C enum as a Rust enum.
 }
-/// Bitmask used to indicate which bits of a pixel represent a given color.
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct PixelBitmask {
-    /// The bits indicating the red channel.
     pub red: u32,
-    /// The bits indicating the green channel.
     pub green: u32,
-    /// The bits indicating the blue channel.
     pub blue: u32,
-    /// The reserved bits, which are ignored by the video hardware.
     pub reserved: u32,
 }
 
@@ -86,6 +71,11 @@ impl FrameBuffer {
 #[derive(Copy, Clone, Debug)]
 pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
 
+// static singleton pointer
+static mut RAW_GRAPHICS: [u8; core::mem::size_of::<Graphics>()] =
+    [0; core::mem::size_of::<Graphics>()];
+static mut GRAPHICS_INITIALIZED: bool = false;
+
 #[derive(Copy, Clone)]
 pub struct Graphics {
     fb: FrameBuffer,
@@ -114,6 +104,27 @@ impl Graphics {
             mi,
             pixel_writer,
         }
+    }
+
+    pub fn instance() -> &'static mut Self {
+        if unsafe { !GRAPHICS_INITIALIZED } {
+            panic!("Graphics is not initialized");
+        }
+        unsafe { &mut *(RAW_GRAPHICS.as_mut_ptr() as *mut Self) }
+    }
+
+    ///
+    /// # Safety
+    /// This is unsafe : handle raw pointers.
+    pub unsafe fn initialize_instance(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
+        let fb = *fb;
+        let mi = *mi;
+        core::ptr::copy(
+            &Graphics::new(fb, mi),
+            RAW_GRAPHICS.as_mut_ptr() as *mut Graphics,
+            1,
+        );
+        GRAPHICS_INITIALIZED = true;
     }
 
     /// Write to the pixel of the buffer

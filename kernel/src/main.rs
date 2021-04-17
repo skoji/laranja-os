@@ -7,30 +7,10 @@ use core::fmt::Write;
 use core::panic::PanicInfo;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 
-static mut RAW_GRAPHICS: [u8; core::mem::size_of::<Graphics>()] =
-    [0; core::mem::size_of::<Graphics>()];
-
-fn global_graphics() -> &'static mut Graphics {
-    unsafe { &mut *(RAW_GRAPHICS.as_mut_ptr() as *mut laranja_kernel::graphics::Graphics) }
-}
-
-fn create_global_graphics(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
-    let fb = unsafe { *fb };
-    let mi = unsafe { *mi };
-
-    unsafe {
-        core::ptr::copy(
-            &Graphics::new(fb, mi),
-            RAW_GRAPHICS.as_mut_ptr() as *mut Graphics,
-            1,
-        )
-    };
-}
-
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
-    create_global_graphics(fb, mi);
-    let graphics = global_graphics();
+    unsafe { Graphics::initialize_instance(fb, mi) }
+    let graphics = Graphics::instance();
 
     graphics.clear(&PixelColor(32, 32, 32));
     let (width, _) = graphics.resolution();
