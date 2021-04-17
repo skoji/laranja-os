@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 use crate::ascii_font::FONTS;
 
 #[derive(Debug, Copy, Clone)]
@@ -72,8 +74,7 @@ impl FrameBuffer {
 pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
 
 // static singleton pointer
-static mut RAW_GRAPHICS: [u8; core::mem::size_of::<Graphics>()] =
-    [0; core::mem::size_of::<Graphics>()];
+static mut RAW_GRAPHICS: MaybeUninit<Graphics> = MaybeUninit::<Graphics>::uninit();
 static mut GRAPHICS_INITIALIZED: bool = false;
 
 #[derive(Copy, Clone)]
@@ -108,19 +109,16 @@ impl Graphics {
 
     pub fn instance() -> &'static mut Self {
         if unsafe { !GRAPHICS_INITIALIZED } {
-            panic!("Graphics is not initialized");
+            panic!("graphics not initialized");
         }
-        unsafe { &mut *(RAW_GRAPHICS.as_mut_ptr() as *mut Self) }
+        unsafe { &mut *RAW_GRAPHICS.as_mut_ptr() }
     }
 
     ///
     /// # Safety
     /// This is unsafe : handle raw pointers.
     pub unsafe fn initialize_instance(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
-        core::ptr::write(
-            RAW_GRAPHICS.as_mut_ptr() as *mut Graphics,
-            Graphics::new(*fb, *mi),
-        );
+        core::ptr::write(RAW_GRAPHICS.as_mut_ptr(), Graphics::new(*fb, *mi));
         GRAPHICS_INITIALIZED = true;
     }
 
