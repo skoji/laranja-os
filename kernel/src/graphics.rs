@@ -83,6 +83,7 @@ impl FrameBuffer {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
 
 pub struct Graphics {
@@ -132,7 +133,7 @@ impl Graphics {
     }
 
     pub fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &PixelColor) {
-        if !c.is_ascii() {
+        if (c as u32) < 0x20 || (c as u32) > 0x7f {
             return;
         }
         let font: [u8; 16] = FONTS[c as usize];
@@ -143,6 +144,30 @@ impl Graphics {
                 }
             }
         }
+    }
+
+    pub fn write_string(
+        &mut self,
+        mut x: usize,
+        mut y: usize,
+        str: &str,
+        color: &PixelColor,
+    ) -> (usize, usize) {
+        let first_x = x;
+        let (width, height) = self.resolution();
+        for c in str.chars() {
+            self.write_ascii(x, y, c, color);
+            x += 8;
+            if x > width {
+                x = first_x;
+                y += 20;
+            }
+            if y > height {
+                // can not write
+                return (x, y);
+            }
+        }
+        (x, y)
     }
 
     pub fn resolution(&self) -> (usize, usize) {
@@ -157,11 +182,65 @@ impl Graphics {
             }
         }
     }
+
     pub fn fb(&self) -> FrameBuffer {
         self.fb
     }
 
     pub fn mi(&self) -> ModeInfo {
         self.mi
+    }
+    pub fn text_writer(
+        &mut self,
+        first_x: usize,
+        first_y: usize,
+        color: &PixelColor,
+    ) -> TextWriter {
+        TextWriter::new(self, first_x, first_y, color)
+    }
+}
+
+pub struct TextWriter<'a> {
+    graphics: &'a mut Graphics,
+    first_x: usize,
+    first_y: usize,
+    x: usize,
+    y: usize,
+    color: PixelColor,
+}
+
+impl<'a> TextWriter<'a> {
+    pub fn new(
+        graphics: &'a mut Graphics,
+        first_x: usize,
+        first_y: usize,
+        color: &PixelColor,
+    ) -> Self {
+        TextWriter {
+            graphics,
+            first_x,
+            first_y,
+            x: first_x,
+            y: first_y,
+            color: *color,
+        }
+    }
+
+    pub fn reset_coord(&mut self) {
+        self.x = self.first_x;
+        self.y = self.first_y;
+    }
+
+    pub fn change_color(&mut self, color: &PixelColor) {
+        self.color = *color;
+    }
+}
+
+impl<'a> core::fmt::Write for TextWriter<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        let (x, y) = self.graphics.write_string(self.x, self.y, s, &self.color);
+        self.x = x;
+        self.y = y;
+        Ok(())
     }
 }
