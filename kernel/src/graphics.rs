@@ -1,21 +1,4 @@
-pub const FONT_A: [u8; 16] = [
-    0b00000000, //
-    0b00011000, //    **
-    0b00011000, //    **
-    0b00011000, //    **
-    0b00011000, //    **
-    0b00100100, //   *  *
-    0b00100100, //   *  *
-    0b00100100, //   *  *
-    0b00100100, //   *  *
-    0b01111110, //  ******
-    0b01000010, //  *    *
-    0b01000010, //  *    *
-    0b01000010, //  *    *
-    0b11100111, // ***  ***
-    0b00000000, //
-    0b00000000, //
-];
+use crate::ascii_font::FONTS;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u32)]
@@ -149,10 +132,11 @@ impl Graphics {
     }
 
     pub fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &PixelColor) {
-        if c != 'A' {
+        if !c.is_ascii() {
             return;
         }
-        for (dy, line) in FONT_A.iter().enumerate() {
+        let font: [u8; 16] = FONTS[c as usize];
+        for (dy, line) in font.iter().enumerate() {
             for dx in 0..8 {
                 if (line << dx) & 0x80 != 0 {
                     self.write_pixel(x + dx, y + dy, &color);
