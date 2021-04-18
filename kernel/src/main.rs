@@ -13,7 +13,7 @@ use laranja_kernel::{print, println};
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     // initialize Graphics and Console
     unsafe { Graphics::initialize_instance(fb, mi) }
-    Console::initialize(&PixelColor(0, 180, 0), &PixelColor(32, 32, 32));
+    Console::initialize(&PixelColor(255, 128, 0), &PixelColor(32, 32, 32));
 
     let graphics = Graphics::instance();
 
@@ -36,9 +36,7 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
 
     let mut writer = graphics.text_writer(width / 3, y + 32, &PixelColor(255, 255, 0));
     writeln!(writer, "1 + 2 = {}", 1 + 2).unwrap();
-    let console = Console::instance();
-    console.put_string("Hello from console.\n");
-    println!("Hello from println!");
+    println!("Hello Laranja OS !");
     unsafe {
         loop {
             asm!("hlt");
