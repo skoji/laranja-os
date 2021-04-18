@@ -72,7 +72,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         }
         memmap_file.close();
     };
-
     let kernel_file = root
         .open("laranja-kernel", FileMode::Read, FileAttribute::READ_ONLY)
         .unwrap()
@@ -86,12 +85,8 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let buf = &mut [0u8; BUF_SIZE];
     let info: &mut FileInfo = kernel_file.get_info(buf).unwrap().unwrap();
     let kernel_file_size = info.file_size();
-
     let kernel_file_buf = bt
-        .allocate_pool(
-            MemoryType::LOADER_DATA,
-            (kernel_file_size as usize + 0xfff) / 0x1000,
-        )
+        .allocate_pool(MemoryType::LOADER_DATA, kernel_file_size as usize)
         .unwrap()
         .unwrap();
     let entry_pointer_address: *const u64 = (kernel_file_buf as u64 + 24) as *const u64;
@@ -106,7 +101,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             panic!("Elf32 is not supported");
         }
     };
-
     let mut kernel_first = u64::max_value();
     let mut kernel_last = u64::min_value();
     for h in elf.program_header_iter() {
@@ -122,11 +116,9 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let load_size = kernel_last as usize - kernel_first;
     let n_of_pages = (load_size + 0xfff) / 0x1000;
     writeln!(
-        st.stdout(),
+        stdout,
         "kernel_first {:x}, last {:x}, pages {:?}",
-        kernel_first,
-        kernel_last,
-        n_of_pages
+        kernel_first, kernel_last, n_of_pages
     )
     .unwrap();
     bt.allocate_pages(
