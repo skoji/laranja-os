@@ -5,11 +5,15 @@
 
 use core::fmt::Write;
 use core::panic::PanicInfo;
+use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
+    // initialize Graphics and Console
     unsafe { Graphics::initialize_instance(fb, mi) }
+    Console::initialize(&PixelColor(0, 255, 0), &PixelColor(32, 32, 32));
+
     let graphics = Graphics::instance();
 
     graphics.clear(&PixelColor(32, 32, 32));
@@ -32,6 +36,14 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let mut writer = graphics.text_writer(width / 3, y + 32, &PixelColor(255, 255, 0));
     writeln!(writer, "1 + 2 = {}", 1 + 2).unwrap();
 
+    let console = Console::instance();
+    console.put_string("Hello from console\na");
+    console.put_string("Hello from console again\n");
+    console.put_string("Hello from console again and again1\n");
+    console.put_string("Hello from console again and again2\n");
+    console.put_string("Hello from console again and again3\n");
+    console.put_string("Hello from console again and again4\n");
+    console.put_string("Hello from console again and again5");
     unsafe {
         loop {
             asm!("hlt");

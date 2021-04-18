@@ -140,7 +140,7 @@ impl Graphics {
     }
 
     pub fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &PixelColor) {
-        if (c as u32) < 0x20 || (c as u32) > 0x7f {
+        if (c as u32) > 0x7f {
             return;
         }
         let font: [u8; 16] = FONTS[c as usize];
