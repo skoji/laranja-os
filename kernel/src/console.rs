@@ -1,7 +1,4 @@
-use core::{
-    fmt::{self, Write},
-    mem::MaybeUninit,
-};
+use core::{fmt::Write, mem::MaybeUninit};
 
 use crate::graphics::{Graphics, PixelColor};
 
