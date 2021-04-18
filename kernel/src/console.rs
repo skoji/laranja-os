@@ -1,4 +1,7 @@
-use core::mem::MaybeUninit;
+use core::{
+    fmt::{self, Write},
+    mem::MaybeUninit,
+};
 
 use crate::graphics::{Graphics, PixelColor};
 
@@ -88,5 +91,12 @@ impl Console {
                 self.cursor_column += 1;
             }
         }
+    }
+}
+
+impl Write for Console {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.put_string(s);
+        Ok(())
     }
 }
