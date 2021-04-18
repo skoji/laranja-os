@@ -50,6 +50,7 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
 fn eh_personality() {}
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }
