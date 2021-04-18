@@ -27,9 +27,38 @@ struct FrameBufferInfo {
     pub size: usize,
 }
 
+#[allow(dead_code)]
+fn set_max_gop_mode(gop: &mut GraphicsOutput) {
+    // QEMU will reboot after entry to kernel if we use this.
+    let mut mode: Option<gop::Mode> = None;
+    let mut max_res = (0, 0);
+    for m in gop.modes().into_iter() {
+        let m = m.unwrap();
+        let res = m.info().resolution();
+        if res.0 > max_res.0 && res.1 > max_res.1 {
+            max_res = res;
+            mode = Some(m);
+        }
+    }
+
+    if let Some(mode) = mode {
+        gop.set_mode(&mode).unwrap().unwrap();
+    }
+}
+
 #[entry]
 fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let bt = st.boot_services();
+
+    let gop = if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
+        let gop = gop.expect("Warnings encountered while opening GOP");
+        unsafe { &mut *gop.get() }
+    } else {
+        panic!("no ogp");
+    };
+
+    //    set_max_gop_mode(gop);
+
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
     let stdout = st.stdout();
     stdout.reset(false).expect_success("Failed to reset stdout");
@@ -156,12 +185,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             writeln!(st.stdout(), "{:x}", x).unwrap();
         }
     }
-    let gop = if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
-        let gop = gop.expect("Warnings encountered while opening GOP");
-        unsafe { &mut *gop.get() }
-    } else {
-        panic!("no ogp");
-    };
     let mut mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
     let fb_pt = fb.as_mut_ptr();
@@ -177,5 +200,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         size: fb_size,
     };
     kernel_entry(&mut fb, &mut mi);
+
     uefi::Status::SUCCESS
 }
