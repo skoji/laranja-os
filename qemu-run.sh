@@ -1,4 +1,6 @@
 #!/bin/sh
+cp OVMFs/OVMF_VARS.fd .
+cp OVMFs/OVMF_CODE.fd .
 qemu-system-x86_64 \
     -monitor stdio \
     -drive if=pflash,format=raw,readonly,file=OVMF_CODE.fd \

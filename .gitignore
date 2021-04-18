@@ -1,3 +1,5 @@
 /target
 /mnt
+/OVMF_VARS.fd
+/OVMF_CODE.fd
 LARANJA.img
