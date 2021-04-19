@@ -7,12 +7,31 @@ use core::{mem::MaybeUninit, panic::PanicInfo};
 use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{Graphics, PixelColor};
 use laranja_kernel::{print, println};
-use uefi::proto::console::gop::GraphicsOutput;
+use uefi::proto::console::gop::{GraphicsOutput, Mode};
 
 static mut RAW_GOP: MaybeUninit<GraphicsOutput> = MaybeUninit::<GraphicsOutput>::uninit();
 
 fn get_gop() -> &'static mut GraphicsOutput<'static> {
     unsafe { &mut *RAW_GOP.as_mut_ptr() }
+}
+
+#[allow(dead_code)]
+fn set_max_gop_mode() {
+    let gop = get_gop();
+    let mut mode: Option<Mode> = None;
+    let mut max_res = (0, 0);
+    for m in gop.modes().into_iter() {
+        let m = m.unwrap();
+        let res = m.info().resolution();
+        if res.0 > max_res.0 && res.1 > max_res.1 {
+            max_res = res;
+            mode = Some(m);
+        }
+    }
+
+    if let Some(mode) = mode {
+        gop.set_mode(&mode).unwrap().unwrap();
+    }
 }
 
 #[no_mangle]

@@ -50,11 +50,13 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         panic!("no ogp");
     };
 
-    //    set_max_gop_mode(gop);
-
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
+
     let stdout = st.stdout();
     stdout.reset(false).expect_success("Failed to reset stdout");
+
+    set_max_gop_mode(gop);
+
     writeln!(stdout, "Hello from rust").unwrap();
     writeln!(stdout, "Firmware Vendor {}", st.firmware_vendor()).unwrap();
 

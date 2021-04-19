@@ -15,10 +15,14 @@ pub struct Graphics<'a> {
     fb: FrameBuffer<'a>,
     mi: ModeInfo,
     pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
+    rotated: bool,
 }
 
 impl<'a> Graphics<'a> {
     pub fn new(fb: FrameBuffer<'a>, mi: ModeInfo) -> Self {
+        let (width, height) = mi.resolution();
+        let rotated = width < height;
+
         unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.0, rgb.1, rgb.2]);
         }
@@ -37,6 +41,7 @@ impl<'a> Graphics<'a> {
             fb,
             mi,
             pixel_writer,
+            rotated,
         }
     }
 
@@ -58,14 +63,19 @@ impl<'a> Graphics<'a> {
 
     /// Write to the pixel of the buffer
     ///
-    pub fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
+    pub fn write_pixel(&mut self, mut x: usize, mut y: usize, color: &PixelColor) {
         // TODO: don't panic.
-        let (width, height) = self.mi.resolution();
+        let (width, height) = self.resolution();
         if x > width {
             panic!("bad x coord");
         }
         if y > height {
             panic!("bad x coord");
+        }
+        if self.rotated {
+            let oy = y;
+            y = x;
+            x = height - oy;
         }
         let pixel_index = y * self.mi.stride() + x;
         let base = 4 * pixel_index;
@@ -113,7 +123,12 @@ impl<'a> Graphics<'a> {
     }
 
     pub fn resolution(&self) -> (usize, usize) {
-        self.mi.resolution()
+        let r = self.mi.resolution();
+        if self.rotated {
+            (r.1, r.0)
+        } else {
+            r
+        }
     }
 
     pub fn clear(&mut self, color: &PixelColor) {
