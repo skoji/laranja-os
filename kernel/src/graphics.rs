@@ -1,6 +1,6 @@
 use core::mem::MaybeUninit;
 
-use uefi::proto::console::gop::{FrameBuffer, ModeInfo, PixelFormat};
+use uefi::proto::console::gop::{FrameBuffer, GraphicsOutput, ModeInfo, PixelFormat};
 
 use crate::ascii_font::FONTS;
 
@@ -12,13 +12,13 @@ static mut RAW_GRAPHICS: MaybeUninit<Graphics> = MaybeUninit::<Graphics>::uninit
 static mut GRAPHICS_INITIALIZED: bool = false;
 
 pub struct Graphics<'a> {
-    fb: &'a mut FrameBuffer<'a>,
+    fb: FrameBuffer<'a>,
     mi: ModeInfo,
     pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
 }
 
 impl<'a> Graphics<'a> {
-    pub fn new(fb: &'a mut FrameBuffer<'a>, mi: ModeInfo) -> Self {
+    pub fn new(fb: FrameBuffer<'a>, mi: ModeInfo) -> Self {
         unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.0, rgb.1, rgb.2]);
         }
@@ -47,12 +47,13 @@ impl<'a> Graphics<'a> {
         unsafe { &mut *RAW_GRAPHICS.as_mut_ptr() }
     }
 
-    ///
-    /// # Safety
-    /// This is unsafe : handle raw pointers.
-    pub unsafe fn initialize_instance(fb: *mut FrameBuffer<'static>, mi: *mut ModeInfo) {
-        core::ptr::write(RAW_GRAPHICS.as_mut_ptr(), Graphics::new(&mut *fb, *mi));
-        GRAPHICS_INITIALIZED = true;
+    pub fn initialize_instance(gop: &'static mut GraphicsOutput<'static>) {
+        let mi = { gop.current_mode_info() };
+        let fb = gop.frame_buffer();
+        unsafe {
+            core::ptr::write(RAW_GRAPHICS.as_mut_ptr(), Graphics::new(fb, mi));
+            GRAPHICS_INITIALIZED = true;
+        }
     }
 
     /// Write to the pixel of the buffer
@@ -122,59 +123,5 @@ impl<'a> Graphics<'a> {
                 self.write_pixel(x, y, color);
             }
         }
-    }
-
-    pub fn text_writer(
-        &'a mut self,
-        first_x: usize,
-        first_y: usize,
-        color: &PixelColor,
-    ) -> TextWriter {
-        TextWriter::new(self, first_x, first_y, color)
-    }
-}
-
-pub struct TextWriter<'a> {
-    graphics: &'a mut Graphics<'a>,
-    first_x: usize,
-    first_y: usize,
-    x: usize,
-    y: usize,
-    color: PixelColor,
-}
-
-impl<'a> TextWriter<'a> {
-    pub fn new(
-        graphics: &'a mut Graphics<'a>,
-        first_x: usize,
-        first_y: usize,
-        color: &PixelColor,
-    ) -> Self {
-        TextWriter {
-            graphics,
-            first_x,
-            first_y,
-            x: first_x,
-            y: first_y,
-            color: *color,
-        }
-    }
-
-    pub fn reset_coord(&mut self) {
-        self.x = self.first_x;
-        self.y = self.first_y;
-    }
-
-    pub fn change_color(&mut self, color: &PixelColor) {
-        self.color = *color;
-    }
-}
-
-impl<'a> core::fmt::Write for TextWriter<'a> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        let (x, y) = self.graphics.write_string(self.x, self.y, s, &self.color);
-        self.x = x;
-        self.y = y;
-        Ok(())
     }
 }

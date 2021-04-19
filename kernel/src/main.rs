@@ -3,17 +3,21 @@
 #![feature(asm)]
 #![feature(lang_items)]
 
-use core::fmt::Write;
-use core::panic::PanicInfo;
+use core::{mem::MaybeUninit, panic::PanicInfo};
 use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{Graphics, PixelColor};
 use laranja_kernel::{print, println};
-use uefi::proto::console::gop::{FrameBuffer, ModeInfo};
+use uefi::proto::console::gop::GraphicsOutput;
+
+static mut GOP: MaybeUninit<GraphicsOutput> = MaybeUninit::<GraphicsOutput>::uninit();
 
 #[no_mangle]
-extern "C" fn kernel_main(fb: *mut FrameBuffer<'static>, mi: *mut ModeInfo) {
+extern "C" fn kernel_main(gop: *mut GraphicsOutput<'static>) {
+    unsafe {
+        core::ptr::copy(gop, GOP.as_mut_ptr(), 1);
+    }
     // initialize Graphics and Console
-    unsafe { Graphics::initialize_instance(fb, mi) }
+    unsafe { Graphics::initialize_instance(&mut *GOP.as_mut_ptr()) };
     Console::initialize(&PixelColor(255, 128, 0), &PixelColor(32, 32, 32));
 
     let graphics = Graphics::instance();
@@ -35,8 +39,6 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer<'static>, mi: *mut ModeInfo) {
     y += 32;
     graphics.write_string(x, y, "Hello, Laranja/Mikan OS", &PixelColor(255, 0, 255));
 
-    let mut writer = graphics.text_writer(width / 3, y + 32, &PixelColor(255, 255, 0));
-    writeln!(writer, "1 + 2 = {}", 1 + 2).unwrap();
     println!("Hello Laranja OS !");
     unsafe {
         loop {

@@ -167,10 +167,9 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
 
     let entry_pointer = unsafe { *entry_pointer_address } as *const ();
     let kernel_entry = unsafe {
-        core::mem::transmute::<
-            *const (),
-            extern "sysv64" fn(fb: *mut gop::FrameBuffer, mi: *mut gop::ModeInfo) -> (),
-        >(entry_pointer)
+        core::mem::transmute::<*const (), extern "sysv64" fn(gop: *mut gop::GraphicsOutput) -> ()>(
+            entry_pointer,
+        )
     };
     let entry_contents = entry_pointer as *const [u8; 16];
     unsafe {
@@ -178,15 +177,13 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             writeln!(st.stdout(), "{:x}", x).unwrap();
         }
     }
-    let mut mi = gop.current_mode_info();
-    let mut fb = gop.frame_buffer();
     // exit boot service
     let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
     let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
     let (_st, _iter) = st
         .exit_boot_services(handle, &mut mmap_storage[..])
         .expect_success("Failed to exit boot services");
-    kernel_entry(&mut fb, &mut mi);
+    kernel_entry(gop);
 
     uefi::Status::SUCCESS
 }
