@@ -1,74 +1,8 @@
 use core::mem::MaybeUninit;
 
+use uefi::proto::console::gop::{FrameBuffer, ModeInfo, PixelFormat};
+
 use crate::ascii_font::FONTS;
-
-#[derive(Debug, Copy, Clone)]
-#[repr(u32)]
-pub enum PixelFormat {
-    Rgb = 0,
-    Bgr,
-    Bitmask,
-    BltOnly,
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct PixelBitmask {
-    pub red: u32,
-    pub green: u32,
-    pub blue: u32,
-    pub reserved: u32,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(C)]
-pub struct ModeInfo {
-    pub version: u32,
-    pub hor_res: u32,
-    pub ver_res: u32,
-    pub format: PixelFormat,
-    pub mask: PixelBitmask,
-    pub stride: u32,
-}
-
-impl ModeInfo {
-    pub fn resolution(&self) -> (usize, usize) {
-        (self.hor_res as usize, self.ver_res as usize)
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FrameBuffer {
-    base: *mut u8,
-    size: usize,
-}
-
-impl FrameBuffer {
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.base
-    }
-
-    pub fn size(&self) -> usize {
-        self.size
-    }
-
-    /// Write to th index-th byte of the framebuffer
-    ///
-    /// # Safety
-    /// This is unsafe : no bound check.
-    pub unsafe fn write_byte(&mut self, index: usize, val: u8) {
-        self.base.add(index).write_volatile(val);
-    }
-
-    /// Write to th index-th byte of the framebuffer
-    ///
-    /// # Safety
-    /// This is unsafe : no bound check.
-    pub unsafe fn write_value(&mut self, index: usize, value: [u8; 3]) {
-        (self.base.add(index) as *mut [u8; 3]).write_volatile(value)
-    }
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
@@ -77,22 +11,21 @@ pub struct PixelColor(pub u8, pub u8, pub u8); // RGB
 static mut RAW_GRAPHICS: MaybeUninit<Graphics> = MaybeUninit::<Graphics>::uninit();
 static mut GRAPHICS_INITIALIZED: bool = false;
 
-#[derive(Copy, Clone)]
-pub struct Graphics {
-    fb: FrameBuffer,
+pub struct Graphics<'a> {
+    fb: &'a mut FrameBuffer<'a>,
     mi: ModeInfo,
     pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
 }
 
-impl Graphics {
-    pub fn new(fb: FrameBuffer, mi: ModeInfo) -> Self {
+impl<'a> Graphics<'a> {
+    pub fn new(fb: &'a mut FrameBuffer<'a>, mi: ModeInfo) -> Self {
         unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.0, rgb.1, rgb.2]);
         }
         unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, index: usize, rgb: &PixelColor) {
             fb.write_value(index, [rgb.2, rgb.1, rgb.0]);
         }
-        let pixel_writer = match mi.format {
+        let pixel_writer = match mi.pixel_format() {
             PixelFormat::Rgb => write_pixel_rgb,
             PixelFormat::Bgr => write_pixel_bgr,
             _ => {
@@ -117,8 +50,8 @@ impl Graphics {
     ///
     /// # Safety
     /// This is unsafe : handle raw pointers.
-    pub unsafe fn initialize_instance(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
-        core::ptr::write(RAW_GRAPHICS.as_mut_ptr(), Graphics::new(*fb, *mi));
+    pub unsafe fn initialize_instance(fb: *mut FrameBuffer<'static>, mi: *mut ModeInfo) {
+        core::ptr::write(RAW_GRAPHICS.as_mut_ptr(), Graphics::new(&mut *fb, *mi));
         GRAPHICS_INITIALIZED = true;
     }
 
@@ -126,13 +59,14 @@ impl Graphics {
     ///
     pub fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
         // TODO: don't panic.
-        if x > self.mi.hor_res as usize {
+        let (width, height) = self.mi.resolution();
+        if x > width {
             panic!("bad x coord");
         }
-        if y > self.mi.ver_res as usize {
+        if y > height {
             panic!("bad x coord");
         }
-        let pixel_index = y * (self.mi.stride as usize) + x;
+        let pixel_index = y * self.mi.stride() + x;
         let base = 4 * pixel_index;
         unsafe {
             (self.pixel_writer)(&mut self.fb, base, color);
@@ -190,15 +124,8 @@ impl Graphics {
         }
     }
 
-    pub fn fb(&self) -> FrameBuffer {
-        self.fb
-    }
-
-    pub fn mi(&self) -> ModeInfo {
-        self.mi
-    }
     pub fn text_writer(
-        &mut self,
+        &'a mut self,
         first_x: usize,
         first_y: usize,
         color: &PixelColor,
@@ -208,7 +135,7 @@ impl Graphics {
 }
 
 pub struct TextWriter<'a> {
-    graphics: &'a mut Graphics,
+    graphics: &'a mut Graphics<'a>,
     first_x: usize,
     first_y: usize,
     x: usize,
@@ -218,7 +145,7 @@ pub struct TextWriter<'a> {
 
 impl<'a> TextWriter<'a> {
     pub fn new(
-        graphics: &'a mut Graphics,
+        graphics: &'a mut Graphics<'a>,
         first_x: usize,
         first_y: usize,
         color: &PixelColor,

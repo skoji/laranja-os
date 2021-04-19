@@ -6,11 +6,12 @@
 use core::fmt::Write;
 use core::panic::PanicInfo;
 use laranja_kernel::console::Console;
-use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
+use laranja_kernel::graphics::{Graphics, PixelColor};
 use laranja_kernel::{print, println};
+use uefi::proto::console::gop::{FrameBuffer, ModeInfo};
 
 #[no_mangle]
-extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
+extern "C" fn kernel_main(fb: *mut FrameBuffer<'static>, mi: *mut ModeInfo) {
     // initialize Graphics and Console
     unsafe { Graphics::initialize_instance(fb, mi) }
     Console::initialize(&PixelColor(255, 128, 0), &PixelColor(32, 32, 32));

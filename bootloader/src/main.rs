@@ -20,13 +20,6 @@ use uefi::{
     table::boot::{AllocateType, MemoryType},
 };
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-struct FrameBufferInfo {
-    pub fb: *mut u8,
-    pub size: usize,
-}
-
 #[allow(dead_code)]
 fn set_max_gop_mode(gop: &mut GraphicsOutput) {
     // QEMU will reboot after entry to kernel if we use this.
@@ -176,7 +169,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let kernel_entry = unsafe {
         core::mem::transmute::<
             *const (),
-            extern "sysv64" fn(fb: *mut FrameBufferInfo, mi: *mut gop::ModeInfo) -> (),
+            extern "sysv64" fn(fb: *mut gop::FrameBuffer, mi: *mut gop::ModeInfo) -> (),
         >(entry_pointer)
     };
     let entry_contents = entry_pointer as *const [u8; 16];
@@ -187,18 +180,12 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     }
     let mut mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
-    let fb_pt = fb.as_mut_ptr();
-    let fb_size = fb.size();
     // exit boot service
     let max_mmap_size = bt.memory_map_size() + 8 * core::mem::size_of::<MemoryDescriptor>();
     let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
     let (_st, _iter) = st
         .exit_boot_services(handle, &mut mmap_storage[..])
         .expect_success("Failed to exit boot services");
-    let mut fb = FrameBufferInfo {
-        fb: fb_pt,
-        size: fb_size,
-    };
     kernel_entry(&mut fb, &mut mi);
 
     uefi::Status::SUCCESS
