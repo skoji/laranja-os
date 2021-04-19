@@ -9,15 +9,19 @@ use laranja_kernel::graphics::{Graphics, PixelColor};
 use laranja_kernel::{print, println};
 use uefi::proto::console::gop::GraphicsOutput;
 
-static mut GOP: MaybeUninit<GraphicsOutput> = MaybeUninit::<GraphicsOutput>::uninit();
+static mut RAW_GOP: MaybeUninit<GraphicsOutput> = MaybeUninit::<GraphicsOutput>::uninit();
+
+fn get_gop() -> &'static mut GraphicsOutput<'static> {
+    unsafe { &mut *RAW_GOP.as_mut_ptr() }
+}
 
 #[no_mangle]
 extern "C" fn kernel_main(gop: *mut GraphicsOutput<'static>) {
     unsafe {
-        core::ptr::copy(gop, GOP.as_mut_ptr(), 1);
+        core::ptr::copy(gop, RAW_GOP.as_mut_ptr(), 1);
     }
     // initialize Graphics and Console
-    unsafe { Graphics::initialize_instance(&mut *GOP.as_mut_ptr()) };
+    Graphics::initialize_instance(get_gop());
     Console::initialize(&PixelColor(255, 128, 0), &PixelColor(32, 32, 32));
 
     let graphics = Graphics::instance();
