@@ -53,8 +53,8 @@ impl Console {
             self.cursor_row += 1;
         } else {
             // clear
-            for y in 0..(ROWS * LINE_HEIGHT) {
-                for x in 0..(COLUMNS * 8) {
+            for y in 0..(ROWS * LINE_HEIGHT + MARGIN) {
+                for x in 0..(COLUMNS * 8 + MARGIN) {
                     graphics.write_pixel(x, y, &self.bg_color);
                 }
             }
@@ -62,8 +62,8 @@ impl Console {
             for row in 0..(ROWS - 1) {
                 for column in 0..(COLUMNS - 1) {
                     graphics.write_ascii(
-                        8 * column,
-                        LINE_HEIGHT * row,
+                        8 * column + MARGIN,
+                        LINE_HEIGHT * row + MARGIN,
                         self.buffer[self.actual_row(row)][column],
                         &self.fg_color,
                     );
