@@ -83,6 +83,7 @@ pub struct Graphics {
     mi: ModeInfo,
     pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
     rotated: bool,
+    double_scaled: bool,
 }
 
 impl Graphics {
@@ -103,11 +104,13 @@ impl Graphics {
 
         // Hardcode for GPD Pocket resolution
         let rotated = mi.resolution() == (1200, 1920);
+        let double_scaled = mi.resolution() == (1200, 1920);
         Graphics {
             fb,
             mi,
             pixel_writer,
             rotated,
+            double_scaled,
         }
     }
 
@@ -144,7 +147,19 @@ impl Graphics {
             y = x;
             x = height - oy;
         }
+        if self.double_scaled {
+            x *= 2;
+            y *= 2;
+            self.write_actual_pixel(x, y, color);
+            self.write_actual_pixel(x + 1, y, color);
+            self.write_actual_pixel(x, y + 1, color);
+            self.write_actual_pixel(x + 1, y + 1, color);
+        } else {
+            self.write_actual_pixel(x, y, color);
+        }
+    }
 
+    fn write_actual_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
         let pixel_index = y * (self.mi.stride as usize) + x;
         let base = 4 * pixel_index;
         unsafe {
@@ -192,8 +207,9 @@ impl Graphics {
 
     pub fn resolution(&self) -> (usize, usize) {
         let r = self.mi.resolution();
-        if self.rotated {
-            (r.1, r.0)
+        let r = if self.rotated { (r.1, r.0) } else { r };
+        if self.double_scaled {
+            (r.0 / 2, r.1 / 2)
         } else {
             r
         }
