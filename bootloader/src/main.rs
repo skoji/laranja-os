@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate alloc;
 extern crate rlibc;
+use alloc::string::ToString;
 use console::gop;
 use core::fmt::Write;
 use elf_rs::*;
@@ -34,10 +35,8 @@ fn set_gop_mode(gop: &mut GraphicsOutput) {
         let m = m.unwrap();
         let res = m.info().resolution();
 
-        // Hardcode for QEMU
-        if mode.is_none() && (1024, 768) == res {
-            mode = Some(m);
-        } else if (1200, 1920) == res {
+        // Hardcode for GPD Pocket / Lemur Pro.
+        if (mode.is_none() && (1024, 768) == res) || (1200, 1920) == res || (1920, 1080) == res {
             mode = Some(m);
         }
     }
@@ -62,7 +61,10 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let stdout = st.stdout();
     stdout.reset(false).expect_success("Failed to reset stdout");
 
-    set_gop_mode(gop);
+    if st.firmware_vendor().to_string() != "EDK II" {
+        // set gop mode if it is not in QEMU
+        set_gop_mode(gop);
+    }
 
     writeln!(stdout, "Hello from rust").unwrap();
     writeln!(stdout, "Firmware Vendor {}", st.firmware_vendor()).unwrap();
