@@ -9,15 +9,18 @@ use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 use laranja_kernel::{print, println};
 
+static BG_COLOR: PixelColor = PixelColor(32, 32, 32);
+static FG_COLOR: PixelColor = PixelColor(255, 128, 0);
+
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     // initialize Graphics and Console
     unsafe { Graphics::initialize_instance(fb, mi) }
-    Console::initialize(&PixelColor(255, 128, 0), &PixelColor(32, 32, 32));
+    Console::initialize(&FG_COLOR, &BG_COLOR);
 
     let graphics = Graphics::instance();
 
-    graphics.clear(&PixelColor(32, 32, 32));
+    graphics.clear(&BG_COLOR);
     let (width, _) = graphics.resolution();
     let mut x = width / 3;
     let mut y = 100;
