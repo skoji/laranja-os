@@ -28,15 +28,16 @@ struct FrameBufferInfo {
 }
 
 #[allow(dead_code)]
-fn set_max_gop_mode(gop: &mut GraphicsOutput) {
-    // QEMU will reboot after entry to kernel if we use this.
+fn set_gop_mode(gop: &mut GraphicsOutput) {
     let mut mode: Option<gop::Mode> = None;
-    let mut max_res = (0, 0);
     for m in gop.modes().into_iter() {
         let m = m.unwrap();
         let res = m.info().resolution();
-        if res.0 > max_res.0 && res.1 > max_res.1 {
-            max_res = res;
+
+        // Hardcode for QEMU
+        if mode.is_none() && (1024, 768) == res {
+            mode = Some(m);
+        } else if (1200, 1920) == res {
             mode = Some(m);
         }
     }
@@ -57,11 +58,12 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         panic!("no ogp");
     };
 
-    //    set_max_gop_mode(gop);
-
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
     let stdout = st.stdout();
     stdout.reset(false).expect_success("Failed to reset stdout");
+
+    set_gop_mode(gop);
+
     writeln!(stdout, "Hello from rust").unwrap();
     writeln!(stdout, "Firmware Vendor {}", st.firmware_vendor()).unwrap();
 
@@ -185,6 +187,7 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             writeln!(st.stdout(), "{:x}", x).unwrap();
         }
     }
+
     let mut mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
     let fb_pt = fb.as_mut_ptr();

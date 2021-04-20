@@ -82,6 +82,7 @@ pub struct Graphics {
     fb: FrameBuffer,
     mi: ModeInfo,
     pixel_writer: unsafe fn(&mut FrameBuffer, usize, &PixelColor),
+    rotated: bool,
 }
 
 impl Graphics {
@@ -100,10 +101,13 @@ impl Graphics {
             }
         };
 
+        // Hardcode for GPD Pocket resolution
+        let rotated = mi.resolution() == (1200, 1920);
         Graphics {
             fb,
             mi,
             pixel_writer,
+            rotated,
         }
     }
 
@@ -124,14 +128,21 @@ impl Graphics {
 
     /// Write to the pixel of the buffer
     ///
-    pub fn write_pixel(&mut self, x: usize, y: usize, color: &PixelColor) {
-        // TODO: don't panic.
-        if x > self.mi.hor_res as usize {
+    pub fn write_pixel(&mut self, mut x: usize, mut y: usize, color: &PixelColor) {
+        let (width, height) = self.resolution();
+        if x > width {
             panic!("bad x coord");
         }
-        if y > self.mi.ver_res as usize {
+        if y > height as usize {
             panic!("bad x coord");
         }
+
+        if self.rotated {
+            let oy = y;
+            y = x;
+            x = height - oy;
+        }
+
         let pixel_index = y * (self.mi.stride as usize) + x;
         let base = 4 * pixel_index;
         unsafe {
@@ -178,7 +189,12 @@ impl Graphics {
     }
 
     pub fn resolution(&self) -> (usize, usize) {
-        self.mi.resolution()
+        let r = self.mi.resolution();
+        if self.rotated {
+            (r.1, r.0)
+        } else {
+            r
+        }
     }
 
     pub fn clear(&mut self, color: &PixelColor) {

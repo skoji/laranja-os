@@ -21,7 +21,6 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let (width, _) = graphics.resolution();
     let mut x = width / 3;
     let mut y = 100;
-
     for i in 0x20u8..0x7Fu8 {
         graphics.write_ascii(x, y, i.into(), &PixelColor(0, 255, 0));
         x += 8;
@@ -37,6 +36,7 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let mut writer = graphics.text_writer(width / 3, y + 32, &PixelColor(255, 255, 0));
     writeln!(writer, "1 + 2 = {}", 1 + 2).unwrap();
     println!("Hello Laranja OS !");
+    println!("Resolution {:?}", graphics.resolution());
     unsafe {
         loop {
             asm!("hlt");
