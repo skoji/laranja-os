@@ -1,6 +1,6 @@
-use core::mem::MaybeUninit;
-
 use crate::ascii_font::FONTS;
+use crate::{print, println};
+use core::mem::MaybeUninit;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u32)]
@@ -131,10 +131,12 @@ impl Graphics {
     pub fn write_pixel(&mut self, mut x: usize, mut y: usize, color: &PixelColor) {
         let (width, height) = self.resolution();
         if x > width {
-            panic!("bad x coord");
+            println!("bad x coord: {}", x);
+            return;
         }
         if y > height as usize {
-            panic!("bad x coord");
+            println!("bad y coord: {}", y);
+            return;
         }
 
         if self.rotated {
