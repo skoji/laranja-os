@@ -7,6 +7,7 @@ static mut RAW_CONSOLE: MaybeUninit<Console> = MaybeUninit::<Console>::uninit();
 pub const ROWS: usize = 25;
 pub const COLUMNS: usize = 80;
 pub const LINE_HEIGHT: usize = 18;
+pub const MARGIN: usize = 8;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Console {
@@ -79,8 +80,8 @@ impl Console {
             }
             if self.cursor_column < COLUMNS && c as u32 >= 0x20 {
                 graphics.write_ascii(
-                    8 * self.cursor_column,
-                    LINE_HEIGHT * self.cursor_row,
+                    8 * self.cursor_column + MARGIN,
+                    LINE_HEIGHT * self.cursor_row + MARGIN,
                     c,
                     &self.fg_color,
                 );
