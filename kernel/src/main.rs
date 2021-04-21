@@ -73,12 +73,14 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     // draw mouse cursor which will never move
     for (dy, l) in MOUSE_CURSOR_SHAPE.iter().enumerate() {
         for (dx, c) in l.chars().enumerate() {
+            let x = 200 + dx;
+            let y = 100 + dy;
             match c {
                 '@' => {
-                    graphics.write_pixel(200 + dx, 100 + dy, &PixelColor(0, 0, 0));
+                    graphics.write_pixel(x, y, &PixelColor(0, 0, 0));
                 }
                 '.' => {
-                    graphics.write_pixel(200 + dx, 100 + dy, &PixelColor(255, 255, 255));
+                    graphics.write_pixel(x, y, &PixelColor(255, 255, 255));
                 }
                 _ => {}
             }
