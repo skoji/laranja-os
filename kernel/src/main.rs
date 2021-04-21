@@ -9,8 +9,8 @@ use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 use laranja_kernel::{print, println};
 
-static BG_COLOR: PixelColor = PixelColor(0, 80, 80);
-static FG_COLOR: PixelColor = PixelColor(255, 128, 0);
+const BG_COLOR: PixelColor = PixelColor(0, 80, 80);
+const FG_COLOR: PixelColor = PixelColor(255, 128, 0);
 
 const MOUSE_CURSOR_HEIGHT: usize = 24;
 
