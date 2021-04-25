@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Satoshi Kojima <skoji@skoji.jp>"]
 edition = "2018"
 
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+
 [profile.dev]
 panic = "abort"
 
