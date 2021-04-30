@@ -6,7 +6,7 @@
 use core::panic::PanicInfo;
 use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
-use laranja_kernel::pci::scan_all_bus;
+use laranja_kernel::pci::{read_class_code, read_vendor_id, scan_all_bus};
 use laranja_kernel::{print, println};
 
 const BG_COLOR: PixelColor = PixelColor(0, 80, 80);
@@ -71,17 +71,25 @@ fn welcome_message() {
     println!("Resolution {:?}", Graphics::instance().resolution());
 }
 
+fn list_pci_devices() {
+    let pci_devices = scan_all_bus().unwrap();
+    println!("pci devices successfully scanned.");
+    for dev in pci_devices.iter() {
+        let vendor_id = read_vendor_id(dev.bus, dev.device, dev.function);
+        let class_code = read_class_code(dev.bus, dev.device, dev.function);
+        println!(
+            "{}.{}.{}:, vend {:04x}, class {:08x}, head {:02x}",
+            dev.bus, dev.device, dev.function, vendor_id, class_code, dev.header_type
+        );
+    }
+}
+
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     initialize(fb, mi);
     draw_mouse_cursor();
     welcome_message();
-
-    let pci_devices = scan_all_bus().unwrap();
-    println!("pci devices scanned.");
-    for dev in pci_devices.iter() {
-        println!("{:?}", dev);
-    }
+    list_pci_devices();
     unsafe {
         loop {
             asm!("hlt");
