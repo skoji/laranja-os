@@ -1,4 +1,3 @@
-use crate::{print, println};
 use core::{fmt::Write, mem::MaybeUninit};
 
 use crate::graphics::{Graphics, PixelColor};
@@ -33,11 +32,7 @@ impl Console {
     }
 
     pub fn initialize(fg_color: &PixelColor, bg_color: &PixelColor) {
-        unsafe {
-            core::ptr::write(RAW_CONSOLE.as_mut_ptr(), Console::new(fg_color, bg_color));
-            log::set_logger(Console::instance()).unwrap();
-            log::set_max_level(log::LevelFilter::Info);
-        };
+        unsafe { core::ptr::write(RAW_CONSOLE.as_mut_ptr(), Console::new(fg_color, bg_color)) };
     }
 
     pub fn instance() -> &'static mut Console {
@@ -102,16 +97,4 @@ impl Write for Console {
         self.put_string(s);
         Ok(())
     }
-}
-
-impl log::Log for Console {
-    fn enabled(&self, _metadata: &log::Metadata) -> bool {
-        true
-    }
-
-    fn log(&self, record: &log::Record) {
-        println!("{} - {}", record.level(), record.args());
-    }
-
-    fn flush(&self) {}
 }

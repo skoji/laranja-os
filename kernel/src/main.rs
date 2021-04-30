@@ -8,7 +8,6 @@ use core::panic::PanicInfo;
 use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 use laranja_kernel::{print, println};
-use log::{error, info, warn};
 
 const BG_COLOR: PixelColor = PixelColor(0, 80, 80);
 const FG_COLOR: PixelColor = PixelColor(255, 128, 0);
@@ -69,8 +68,8 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     let mut writer = graphics.text_writer(width / 3, y + 32, &PixelColor(255, 255, 0));
     writeln!(writer, "1 + 2 = {}", 1 + 2).unwrap();
     println!("Hello Laranja OS !");
-    info!("Resolution {:?}", graphics.resolution());
-    warn!("test waring");
+    println!("Resolution {:?}", graphics.resolution());
+
     // draw mouse cursor which will never move
     for (dy, l) in MOUSE_CURSOR_SHAPE.iter().enumerate() {
         for (dx, c) in l.chars().enumerate() {
@@ -100,6 +99,6 @@ fn eh_personality() {}
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    error!("{}", info);
+    println!("{}", info);
     loop {}
 }
