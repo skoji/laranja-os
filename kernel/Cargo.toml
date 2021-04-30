@@ -5,6 +5,7 @@ authors = ["Satoshi Kojima <skoji@skoji.jp>"]
 edition = "2018"
 
 [dependencies]
+x86_64 = "0.14.0"
 
 [profile.dev]
 panic = "abort"

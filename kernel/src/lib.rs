@@ -2,6 +2,7 @@
 mod ascii_font;
 pub mod console;
 pub mod graphics;
+pub mod pci;
 
 use core::fmt::Write;
 
