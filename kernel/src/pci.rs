@@ -1,3 +1,5 @@
+use core::fmt::Display;
+
 use x86_64::instructions::port::{PortReadOnly, PortWriteOnly};
 
 const MAX_DEVICES: usize = 32;
@@ -14,12 +16,30 @@ pub enum Error {
 
 pub type Result<T> = core::result::Result<T, Error>;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct ClassCode {
+    pub base: u8,
+    pub sub: u8,
+    pub interface: u8,
+}
+
+impl Display for ClassCode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "(0x{:02x}, 0x{:02x}, 0x{:02x})",
+            self.base, self.sub, self.interface
+        )
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct Device {
     pub bus: u8,
     pub device: u8,
     pub function: u8,
     pub header_type: u8,
+    pub class_code: ClassCode,
 }
 
 const EMPTY_DEVICE: Device = Device {
@@ -27,7 +47,18 @@ const EMPTY_DEVICE: Device = Device {
     device: 0xad,
     function: 0xbe,
     header_type: 0xef,
+    class_code: ClassCode {
+        base: 0,
+        sub: 0,
+        interface: 0,
+    },
 };
+
+impl Device {
+    pub fn get_vendor_id(&self) -> u16 {
+        read_vendor_id(self.bus, self.device, self.function)
+    }
+}
 
 //TODO; should be fixed length vector or something linke that
 pub struct PciDevices {
@@ -60,16 +91,15 @@ impl PciDevices {
 
     fn scan_function(&mut self, bus: u8, device: u8, function: u8) -> Result<()> {
         let header_type = read_header_type(bus, device, function);
+        let class_code = read_class_code(bus, device, function);
         self.add_device(Device {
             bus,
             device,
             function,
             header_type,
+            class_code,
         })?;
-        let class_code = read_class_code(bus, device, function);
-        let base = (class_code >> 24 & 0xff) as u8;
-        let sub = (class_code >> 16 & 0xff) as u8;
-        if base == 0x06 && sub == 0x04 {
+        if class_code.base == 0x06 && class_code.sub == 0x04 {
             // PCI-PCI bridge
             let bus_numbers = read_bus_numbers(bus, device, function);
             let secondary_bus = ((bus_numbers >> 8) & 0xff) as u8;
@@ -159,8 +189,13 @@ pub fn read_header_type(bus: u8, device: u8, function: u8) -> u8 {
     (PCI_CONFIG.lock().read(bus, device, function, 0x0c) >> 16 & 0xff) as u8
 }
 
-pub fn read_class_code(bus: u8, device: u8, function: u8) -> u32 {
-    PCI_CONFIG.lock().read(bus, device, function, 0x08)
+pub fn read_class_code(bus: u8, device: u8, function: u8) -> ClassCode {
+    let r = PCI_CONFIG.lock().read(bus, device, function, 0x08);
+    ClassCode {
+        base: ((r >> 24) & 0xff) as u8,
+        sub: ((r >> 16) & 0xff) as u8,
+        interface: ((r >> 8) & 0xff) as u8,
+    }
 }
 
 pub fn read_bus_numbers(bus: u8, device: u8, function: u8) -> u32 {
