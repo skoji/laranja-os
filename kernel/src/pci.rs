@@ -5,8 +5,7 @@ const MAX_FUNCTIONS: u8 = 8;
 
 const INVALID_VENDOR_ID: u16 = 0xffff;
 
-// TODO; should be thread safe
-static mut PCI_CONFIG: PciConfig = PciConfig::new();
+static PCI_CONFIG: spin::Mutex<PciConfig> = spin::Mutex::new(PciConfig::new());
 
 struct PciConfig {
     address_port: PortWriteOnly<u32>,
@@ -39,5 +38,5 @@ impl PciConfig {
 }
 
 pub fn read_vendor_id(bus: u8, device: u8, function: u8) -> u16 {
-    unsafe { (PCI_CONFIG.read(bus, device, function, 0) & 0xffff) as u16 }
+    (PCI_CONFIG.lock().read(bus, device, function, 0) & 0xffff) as u16
 }

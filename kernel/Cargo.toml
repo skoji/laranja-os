@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 x86_64 = "0.14.0"
+spin = { version = "0.9.0", features = ["lock_api", "mutex"] }
 
 [profile.dev]
 panic = "abort"
