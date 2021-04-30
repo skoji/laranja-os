@@ -7,7 +7,7 @@ use core::panic::PanicInfo;
 use laranja_kernel::console::Console;
 use laranja_kernel::graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 use laranja_kernel::pci::{read_class_code, read_vendor_id, scan_all_bus};
-use laranja_kernel::{print, println};
+use laranja_kernel::{error, info, println};
 
 const BG_COLOR: PixelColor = PixelColor(0, 80, 80);
 const FG_COLOR: PixelColor = PixelColor(255, 128, 0);
@@ -68,7 +68,7 @@ fn draw_mouse_cursor() {
 }
 fn welcome_message() {
     println!("Hello Laranja OS !");
-    println!("Resolution {:?}", Graphics::instance().resolution());
+    info!("Resolution {:?}", Graphics::instance().resolution());
 }
 
 fn list_pci_devices() {
@@ -102,6 +102,6 @@ fn eh_personality() {}
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
+    error!("{}", info);
     loop {}
 }
