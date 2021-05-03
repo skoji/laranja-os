@@ -5,7 +5,6 @@
 
 #[macro_use]
 extern crate alloc;
-extern crate rlibc;
 use alloc::string::ToString;
 use console::gop;
 use core::fmt::Write;
