@@ -4,7 +4,7 @@
 #![feature(lang_items)]
 
 use core::panic::PanicInfo;
-use laranja_kernel::pci::{read_class_code, read_vendor_id, scan_all_bus, ClassCode};
+use laranja_kernel::pci::{read_bar, read_class_code, read_vendor_id, scan_all_bus, ClassCode};
 use laranja_kernel::{console::Console, pci::PciDevices};
 use laranja_kernel::{debug, error, info, println};
 use laranja_kernel::{
@@ -113,18 +113,22 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     welcome_message();
     let pci_devices = list_pci_devices();
     let xhc = find_xhc(pci_devices);
-    match xhc {
+    let xhc = match xhc {
         Some(xhc) => {
             info!(
                 "xHC has been found: {}.{}.{}",
                 xhc.bus, xhc.device, xhc.function
             );
+            xhc
         }
         None => {
-            info!("no xHC device");
+            panic!("no xHC device");
         }
     };
-
+    let xhc_bar = read_bar(&xhc, 0).unwrap();
+    info!("xhc_bar = {:08x}", xhc_bar);
+    let xhc_mmio_base = xhc_bar & !0xf;
+    info!("xHC mmio_base = {:08x}", xhc_mmio_base);
     unsafe {
         loop {
             asm!("hlt");

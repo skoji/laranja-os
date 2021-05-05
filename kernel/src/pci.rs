@@ -12,6 +12,7 @@ static PCI_CONFIG: spin::Mutex<PciConfig> = spin::Mutex::new(PciConfig::new());
 #[derive(Copy, Clone, Debug)]
 pub enum Error {
     Full,
+    OutOfRange,
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
@@ -179,6 +180,10 @@ impl PciConfig {
             self.data_port.read()
         }
     }
+
+    pub fn read_dev(&mut self, dev: &Device, reg_addr: u8) -> u32 {
+        self.read(dev.bus, dev.device, dev.function, reg_addr)
+    }
 }
 
 pub fn read_vendor_id(bus: u8, device: u8, function: u8) -> u16 {
@@ -204,6 +209,35 @@ pub fn read_bus_numbers(bus: u8, device: u8, function: u8) -> u32 {
 
 pub fn is_single_function_device(header_type: u8) -> bool {
     header_type & 0x80 == 0
+}
+
+fn calc_bar_address(bar_index: usize) -> u8 {
+    (0x10 + 4 * bar_index) as u8
+}
+
+fn read_conf_reg(dev: &Device, reg_addr: u8) -> u32 {
+    PCI_CONFIG.lock().read_dev(dev, reg_addr)
+}
+
+pub fn read_bar(device: &Device, bar_index: usize) -> Result<u64> {
+    if bar_index >= 6 {
+        return Err(Error::OutOfRange);
+    }
+    let addr = calc_bar_address(bar_index);
+    let bar = read_conf_reg(device, addr);
+
+    // 32 bit
+    if (bar & 4) == 0 {
+        return Ok(bar.into());
+    }
+
+    // 64bit
+    if bar_index >= 5 {
+        return Err(Error::OutOfRange);
+    }
+
+    let bar_upper = read_conf_reg(device, addr + 4);
+    Ok(bar as u64 | (bar_upper as u64) << 32)
 }
 
 pub fn scan_all_bus() -> Result<PciDevices> {
