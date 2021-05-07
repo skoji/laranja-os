@@ -10,12 +10,6 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "bit_field"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed8765909f9009617974ab6b7d332625b320b33c326b1e9321382ef1999b5d56"
-
-[[package]]
-name = "bit_field"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcb6dd1c2376d2e096796e234a70e17e94cc2d5d54ff8ce42b28cef1d0d359a4"
@@ -47,8 +41,8 @@ name = "laranja-loader"
 version = "0.1.0"
 dependencies = [
  "elf_rs",
+ "log",
  "uefi",
- "uefi-services",
 ]
 
 [[package]]
@@ -104,7 +98,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bad643914094137d475641b6bab89462505316ec2ce70907ad20102d28a79ab8"
 dependencies = [
- "bit_field 0.10.1",
+ "bit_field",
 ]
 
 [[package]]
@@ -131,29 +125,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "uefi-services"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03df29f1a75c0b92df0b701f815fa3e66a25cb510f99a8d59f720b289ed94a3d"
-dependencies = [
- "cfg-if",
- "log",
- "uefi",
- "x86_64",
-]
-
-[[package]]
 name = "unicode-xid"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
-
-[[package]]
-name = "x86_64"
-version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d9164ba09d4a6744b87c540d02556722080bd7689e92b6ff008b803b1460647"
-dependencies = [
- "bit_field 0.9.0",
- "bitflags",
-]

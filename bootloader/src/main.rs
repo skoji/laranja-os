@@ -1,5 +1,6 @@
 #![feature(abi_efiapi)]
 #![feature(asm)]
+#![feature(alloc_error_handler)]
 #![no_std]
 #![no_main]
 
@@ -13,12 +14,14 @@ use proto::console;
 use uefi::{
     prelude::*,
     proto::{self, console::gop::GraphicsOutput, media::fs::SimpleFileSystem},
-    table::boot::MemoryDescriptor,
+    table::boot::{EventType, MemoryDescriptor, Tpl},
 };
 use uefi::{
     proto::media::file::{File, FileAttribute, FileInfo, FileMode, FileType::Regular},
     table::boot::{AllocateType, MemoryType},
 };
+
+static mut LOGGER: Option<uefi::logger::Logger> = None;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -45,6 +48,10 @@ fn set_gop_mode(gop: &mut GraphicsOutput) {
     }
 }
 
+fn exit_boot_services(_: uefi::Event) {
+    uefi::alloc::exit_boot_services();
+}
+
 #[entry]
 fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     let bt = st.boot_services();
@@ -56,15 +63,31 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
         panic!("no ogp");
     };
 
-    uefi_services::init(&st).expect_success("Failed to initialize utilities");
+    //    uefi_services::init(&st).expect_success("Failed to initialize utilities");
+    unsafe {
+        uefi::alloc::init(bt);
+        bt.create_event(
+            EventType::SIGNAL_EXIT_BOOT_SERVICES,
+            Tpl::NOTIFY,
+            Some(exit_boot_services),
+        )
+        .map_inner(|_| ())
+        .unwrap()
+        .unwrap();
+    }
     let stdout = st.stdout();
-    stdout.reset(false).expect_success("Failed to reset stdout");
+    let logger = unsafe {
+        LOGGER = Some(uefi::logger::Logger::new(stdout));
+        LOGGER.as_ref().unwrap()
+    };
+    log::set_logger(logger).unwrap();
+    log::set_max_level(log::LevelFilter::Info);
 
     if st.firmware_vendor().to_string() != "EDK II" {
         // set gop mode if it is not in QEMU
         set_gop_mode(gop);
     }
-
+    log::error!("intentional panic");
     writeln!(stdout, "Hello from rust").unwrap();
     writeln!(stdout, "Firmware Vendor {}", st.firmware_vendor()).unwrap();
 
@@ -182,13 +205,6 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
             extern "sysv64" fn(fb: *mut FrameBufferInfo, mi: *mut gop::ModeInfo) -> (),
         >(entry_pointer)
     };
-    let entry_contents = entry_pointer as *const [u8; 16];
-    unsafe {
-        for x in &*entry_contents {
-            writeln!(st.stdout(), "{:x}", x).unwrap();
-        }
-    }
-
     let mut mi = gop.current_mode_info();
     let mut fb = gop.frame_buffer();
     let fb_pt = fb.as_mut_ptr();
@@ -206,4 +222,22 @@ fn efi_main(handle: Handle, st: SystemTable<Boot>) -> Status {
     kernel_entry(&mut fb, &mut mi);
 
     uefi::Status::SUCCESS
+}
+
+#[alloc_error_handler]
+fn out_of_memory(layout: ::core::alloc::Layout) -> ! {
+    panic!(
+        "Ran out of free memory while trying to allocate {:#?}",
+        layout
+    );
+}
+
+#[panic_handler]
+fn panic_handler(info: &core::panic::PanicInfo) -> ! {
+    log::error!("{}", info);
+    loop {
+        unsafe {
+            asm!("hlt");
+        }
+    }
 }
