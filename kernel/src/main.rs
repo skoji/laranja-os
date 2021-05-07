@@ -88,7 +88,7 @@ fn list_pci_devices() -> PciDevices {
     pci_devices
 }
 
-fn find_xhc(pci_devices: PciDevices) -> Option<Device> {
+fn find_xhc(pci_devices: &PciDevices) -> Option<Device> {
     let mut xhc_dev = None;
     let xhcclass = ClassCode {
         base: 0x0c,
@@ -106,13 +106,29 @@ fn find_xhc(pci_devices: PciDevices) -> Option<Device> {
     xhc_dev
 }
 
+fn switch_echi_to_xhci(_xhc_dev: &Device, pci_devices: &PciDevices) {
+    let ehciclass = ClassCode {
+        base: 0x0c,
+        sub: 0x03,
+        interface: 0x20,
+    };
+    let ehci = pci_devices
+        .iter()
+        .find(|&dev| dev.class_code == ehciclass && dev.get_vendor_id() == 0x8086);
+    if ehci.is_none() {
+        info!("no ehci");
+    } else {
+        panic!("ehci found, but do nothing for present");
+    }
+}
+
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     initialize(fb, mi);
     draw_mouse_cursor();
     welcome_message();
     let pci_devices = list_pci_devices();
-    let xhc = find_xhc(pci_devices);
+    let xhc = find_xhc(&pci_devices);
     let xhc = match xhc {
         Some(xhc) => {
             info!(
@@ -125,6 +141,7 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
             panic!("no xHC device");
         }
     };
+    switch_echi_to_xhci(&xhc, &pci_devices);
     let xhc_bar = read_bar(&xhc, 0).unwrap();
     info!("xhc_bar = {:08x}", xhc_bar);
     let xhc_mmio_base = xhc_bar & !0xf;
