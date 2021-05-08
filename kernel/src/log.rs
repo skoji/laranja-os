@@ -1,7 +1,7 @@
 use core::fmt::Write;
 
 static LOG_LEVEL_DISPLAY: [&str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
-pub static LOG_LEVEL: spin::Mutex<LogLevel> = spin::Mutex::new(LogLevel::Info);
+pub static LOG_LEVEL: spin::Mutex<LogLevel> = spin::Mutex::new(LogLevel::Debug);
 
 #[repr(usize)]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
