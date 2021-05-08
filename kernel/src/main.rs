@@ -5,8 +5,9 @@
 
 use core::panic::PanicInfo;
 use laranja_kernel::pci::{read_bar, read_class_code, read_vendor_id, scan_all_bus, ClassCode};
+use laranja_kernel::usb;
 use laranja_kernel::{console::Console, pci::PciDevices};
-use laranja_kernel::{debug, error, info, print, println};
+use laranja_kernel::{debug, error, info, print, trace};
 use laranja_kernel::{
     graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor},
     pci::Device,
@@ -90,9 +91,14 @@ fn list_pci_devices() -> PciDevices {
     for dev in pci_devices.iter() {
         let vendor_id = read_vendor_id(dev.bus, dev.device, dev.function);
         let class_code = read_class_code(dev.bus, dev.device, dev.function);
-        debug!(
+        trace!(
             "{}.{}.{}:, vend {:04x}, class {}, head {:02x}",
-            dev.bus, dev.device, dev.function, vendor_id, class_code, dev.header_type
+            dev.bus,
+            dev.device,
+            dev.function,
+            vendor_id,
+            class_code,
+            dev.header_type
         );
     }
     pci_devices
@@ -128,14 +134,13 @@ fn switch_echi_to_xhci(_xhc_dev: &Device, pci_devices: &PciDevices) {
     if ehci.is_none() {
         info!("no ehci");
     } else {
-        panic!("ehci found, but do nothing for present");
+        panic!("ehci found, but do nothing for the present");
     }
 }
 
 #[no_mangle]
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     initialize(fb, mi);
-    draw_mouse_cursor();
     welcome_message();
     let pci_devices = list_pci_devices();
     let xhc = find_xhc(&pci_devices);
@@ -153,9 +158,14 @@ extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     };
     switch_echi_to_xhci(&xhc, &pci_devices);
     let xhc_bar = read_bar(&xhc, 0).unwrap();
-    info!("xhc_bar = {:08x}", xhc_bar);
-    let xhc_mmio_base = xhc_bar & !0xf;
-    info!("xHC mmio_base = {:08x}", xhc_mmio_base);
+    debug!("xhc_bar = {:08x}", xhc_bar);
+    let xhc_mmio_base = (xhc_bar & !0xf) as usize;
+    debug!("xHC mmio_base = {:08x}", xhc_mmio_base);
+    unsafe {
+        usb::Controller::new(xhc_mmio_base);
+    };
+    info!("done");
+    draw_mouse_cursor();
     unsafe {
         loop {
             asm!("hlt");
