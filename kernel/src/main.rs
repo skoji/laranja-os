@@ -6,7 +6,7 @@
 use core::panic::PanicInfo;
 use laranja_kernel::pci::{read_bar, read_class_code, read_vendor_id, scan_all_bus, ClassCode};
 use laranja_kernel::{console::Console, pci::PciDevices};
-use laranja_kernel::{debug, error, info, println};
+use laranja_kernel::{debug, error, info, print, println};
 use laranja_kernel::{
     graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor},
     pci::Device,
@@ -70,7 +70,17 @@ fn draw_mouse_cursor() {
     }
 }
 fn welcome_message() {
-    println!("Hello Laranja OS !");
+    print!(
+        r"
+    __                             _       ____  _____
+   / /   ____ __________ _____    (_)___ _/ __ \/ ___/
+  / /   / __ `/ ___/ __ `/ __ \  / / __ `/ / / /\__ \ 
+ / /___/ /_/ / /  / /_/ / / / / / / /_/ / /_/ /___/ / 
+/_____/\__,_/_/   \__,_/_/ /_/_/ /\__,_/\____//____/  
+                            /___/                     
+
+"
+    );
     info!("Resolution {:?}", Graphics::instance().resolution());
 }
 
