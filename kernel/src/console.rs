@@ -87,6 +87,9 @@ impl Console {
                 );
                 self.buffer[self.actual_cursor_row()][self.cursor_column] = c;
                 self.cursor_column += 1;
+                if self.cursor_column == COLUMNS {
+                    self.newline(graphics);
+                }
             }
         }
     }
