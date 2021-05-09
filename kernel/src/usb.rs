@@ -1,7 +1,7 @@
 use crate::debug;
 
 #[repr(C, packed(4))]
-pub struct CapabilityRegisters {
+struct CapabilityRegisters {
     cap_length: u8,
     reserved: u8,
     hci_version: u16,
@@ -25,14 +25,14 @@ impl core::fmt::Display for CapabilityRegisters {
             self.hcs_params2,
             self.hcs_params3,
             self.hcc_params1,
-            self.db_off >> 2,
-            self.rts_off >> 4,
+            self.db_off & 0xfff0,
+            self.rts_off & 0xffe0,
             self.hcc_params2
         )
     }
 }
 
-#[repr(C, packed(4))]
+#[repr(C)]
 struct HscParam1 {
     data: u32,
 }
@@ -59,7 +59,7 @@ impl core::fmt::Display for HscParam1 {
     }
 }
 
-#[repr(C, packed(4))]
+#[repr(C)]
 struct HscParam2 {
     data: u32,
 }
@@ -83,7 +83,7 @@ impl core::fmt::Display for HscParam2 {
     }
 }
 
-#[repr(C, packed(4))]
+#[repr(C)]
 struct HccParams1 {
     data: u32,
 }
@@ -100,14 +100,54 @@ impl core::fmt::Display for HccParams1 {
     }
 }
 
-pub struct Controller {}
+#[repr(C, packed(4))]
+#[derive(Debug)]
+pub struct OperationalRegisters {
+    usbcmd: u32,
+    usbsts: u32,
+    pagesize: u32,
+    _rsvd_1: [u32; 2],
+    dnctrl: u32,
+    crcr: u64,
+    _rsvd_2: [u32; 4],
+    dcbaap: u64,
+    config: u32,
+}
 
-impl Controller {
+pub struct Doorbell {
+    data: u32,
+}
+
+impl Doorbell {
+    pub fn set_db_target(&mut self, target: u8) {
+        self.data = self.data & 0xfff0 | target as u32;
+    }
+
+    pub fn set_db_stream_id(&mut self, stream_id: u16) {
+        self.data = self.data & 0x00ff | (stream_id as u32) << 16;
+    }
+}
+
+pub struct Controller<'a> {
+    cap_regs: &'a mut CapabilityRegisters,
+    op_regs: &'a mut OperationalRegisters,
+    doorbell_first: *mut Doorbell,
+}
+
+impl<'a> Controller<'a> {
     /// # Safety
     /// mmio_base must be a valid base address for xHCI device MMIO
     pub unsafe fn new(mmio_base: usize) -> Self {
-        let cap_regs = mmio_base as *mut CapabilityRegisters;
-        debug!("cap regs: {}", &*cap_regs);
-        Controller {}
+        let cap_regs = &mut *(mmio_base as *mut CapabilityRegisters);
+        debug!("cap regs: {}", cap_regs);
+        let op_regs =
+            &mut *((mmio_base + cap_regs.cap_length as usize) as *mut OperationalRegisters);
+        debug!("op_regs: {:?}", op_regs);
+        let doorbell_first = (mmio_base + (cap_regs.db_off & 0xfff0) as usize) as *mut Doorbell;
+        Controller {
+            cap_regs,
+            op_regs,
+            doorbell_first,
+        }
     }
 }
