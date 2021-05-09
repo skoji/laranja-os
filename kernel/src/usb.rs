@@ -25,8 +25,8 @@ impl core::fmt::Display for CapabilityRegisters {
             self.hcs_params2,
             self.hcs_params3,
             self.hcc_params1,
-            self.db_off & 0xfff0,
-            self.rts_off & 0xffe0,
+            self.db_off & 0xffff_fffc,
+            self.rts_off & 0xffff_ffe0,
             self.hcc_params2
         )
     }
@@ -120,11 +120,11 @@ pub struct Doorbell {
 
 impl Doorbell {
     pub fn set_db_target(&mut self, target: u8) {
-        self.data = self.data & 0xfff0 | target as u32;
+        self.data = self.data & 0xffff_fff0 | target as u32;
     }
 
     pub fn set_db_stream_id(&mut self, stream_id: u16) {
-        self.data = self.data & 0x00ff | (stream_id as u32) << 16;
+        self.data = self.data & 0x0000_ffff | (stream_id as u32) << 16;
     }
 }
 
@@ -143,7 +143,8 @@ impl<'a> Controller<'a> {
         let op_regs =
             &mut *((mmio_base + cap_regs.cap_length as usize) as *mut OperationalRegisters);
         debug!("op_regs: {:?}", op_regs);
-        let doorbell_first = (mmio_base + (cap_regs.db_off & 0xfff0) as usize) as *mut Doorbell;
+        let doorbell_first =
+            (mmio_base + (cap_regs.db_off & 0xffff_fffc) as usize) as *mut Doorbell;
         Controller {
             cap_regs,
             op_regs,
