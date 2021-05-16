@@ -1,6 +1,7 @@
 #[macro_export]
 macro_rules! bit_setter {
     ($field:tt : $field_type:ty; $bit:literal, $vis:vis $name:ident) => {
+        #[allow(dead_code)]
         $vis fn $name(&mut self, value: bool) {
             let b: $field_type = 1 << $bit;
             if (value) {
@@ -15,6 +16,7 @@ macro_rules! bit_setter {
 #[macro_export]
 macro_rules! bit_getter {
     ($field:tt : $field_type:ty; $bit:literal, $vis:vis $name:ident) => {
+        #[allow(dead_code)]
         $vis fn $name(&mut self) -> bool {
             let b: $field_type = 1 << $bit;
             (self.$field & b) == b
@@ -33,7 +35,7 @@ mod test {
         bit_setter!(data: u32; 4, pub set_data_4);
         bit_setter!(data2: u8; 5, pub set_data2_5);
         bit_getter!(data: u32; 7, pub get_data_7);
-        bit_getter!(data: u32; 11,  pub get_data_11);
+        bit_getter!(data: u32; 11, pub get_data_11);
         bit_getter!(data2: u8; 7, pub get_data2_7);
         bit_getter!(data2: u8; 3, pub get_data2_3);
     }

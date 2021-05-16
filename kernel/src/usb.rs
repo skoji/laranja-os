@@ -27,6 +27,24 @@ impl<'a> Controller<'a> {
             &mut *((mmio_base + cap_regs.cap_length as usize) as *mut OperationalRegisters);
         let doorbell_first =
             (mmio_base + (cap_regs.db_off & 0xffff_fffc) as usize) as *mut Doorbell;
+
+        op_regs.usbcmd.set_intterupt_enable(false);
+        op_regs.usbcmd.set_host_system_error_enable(false);
+        op_regs.usbcmd.set_enable_wrap_event(false);
+        if !op_regs.usbsts.hc_halted() {
+            debug!("hc not halted");
+            op_regs.usbcmd.set_run_stop(false);
+        }
+
+        while !op_regs.usbsts.hc_halted() {}
+        debug!("hc halted");
+
+        // reset controller
+        debug!("hc reset value; {}", op_regs.usbcmd.host_controller_reset());
+        op_regs.usbcmd.set_host_controller_reset(true);
+        while op_regs.usbcmd.host_controller_reset() {}
+        debug!("controller reset done.");
+
         let alloc = ALLOC.lock();
 
         Controller {

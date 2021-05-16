@@ -1,3 +1,5 @@
+use crate::{bit_getter, bit_setter, bitwise_macro};
+
 #[repr(C, packed(4))]
 pub struct CapabilityRegisters {
     pub cap_length: u8,
@@ -100,8 +102,8 @@ impl core::fmt::Display for HccParams1 {
 
 #[repr(C, packed(4))]
 pub struct OperationalRegisters {
-    pub usbcmd: u32,
-    pub usbsts: u32,
+    pub usbcmd: UsbCmd,
+    pub usbsts: UsbSts,
     pub pagesize: u32,
     pub _rsvd_1: [u32; 2],
     pub dnctrl: u32,
@@ -117,12 +119,25 @@ pub struct UsbCmd {
 }
 
 impl UsbCmd {
-    pub fn set_run_stop(&mut self, val: bool) {
-        self.data = bit_set(self.data, 0, val) as u32;
-    }
-    pub fn run_stop(&self) -> bool {
-        bit_get(self.data, 0)
-    }
+    bit_setter!(data: u32; 0, pub set_run_stop);
+    bit_getter!(data: u32; 0, pub run_stop);
+    bit_setter!(data: u32; 1, pub set_host_controller_reset);
+    bit_getter!(data: u32; 1, pub host_controller_reset);
+    bit_setter!(data: u32; 2, pub set_intterupt_enable);
+    bit_getter!(data: u32; 2, pub intterupt_enable);
+    bit_setter!(data: u32; 3, pub set_host_system_error_enable);
+    bit_getter!(data: u32; 3, pub host_system_error_enable);
+    bit_setter!(data: u32; 10, pub set_enable_wrap_event);
+    bit_getter!(data: u32; 10, pub enable_wrap_event);
+}
+
+#[repr(C)]
+pub struct UsbSts {
+    data: u32,
+}
+
+impl UsbSts {
+    bit_getter!(data:u32; 0, pub hc_halted);
 }
 
 pub struct Doorbell {
@@ -137,20 +152,4 @@ impl Doorbell {
     pub fn set_db_stream_id(&mut self, stream_id: u16) {
         self.data = self.data & 0x0000_ffff | (stream_id as u32) << 16;
     }
-}
-
-fn bit_set<T: Into<u64>>(target: T, index: usize, value: bool) -> u64 {
-    let v: u64 = 1 << index;
-    let target: u64 = target.into();
-    if value {
-        target | v
-    } else {
-        target & !v
-    }
-}
-
-fn bit_get<T: Into<u64>>(target: T, index: usize) -> bool {
-    let v: u64 = 1 << index;
-    let target: u64 = target.into();
-    (target & v) > 0
 }
