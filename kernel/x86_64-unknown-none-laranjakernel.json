@@ -19,7 +19,8 @@
     "ld": [
       "-entry=kernel_main",
       "-static",
-      "-nostdlib"
+      "-nostdlib",
+      "-olaranja-kernel"
     ]
   },
   "relocation-model": "static",

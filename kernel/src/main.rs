@@ -2,16 +2,25 @@
 #![no_main]
 #![feature(asm)]
 #![feature(lang_items)]
+#![feature(custom_test_frameworks)]
+#![test_runner(tests::test_runner)]
+#![reexport_test_harness_main = "test_main"]
 
+mod ascii_font;
+pub mod bitwise_macro;
+pub mod console;
+pub mod graphics;
+pub mod log;
+pub mod pci;
+pub mod usb;
+
+use log::*;
+
+use console::Console;
 use core::panic::PanicInfo;
-use laranja_kernel::pci::{read_bar, read_class_code, read_vendor_id, scan_all_bus, ClassCode};
-use laranja_kernel::usb;
-use laranja_kernel::{console::Console, pci::PciDevices};
-use laranja_kernel::{debug, error, info, print, trace};
-use laranja_kernel::{
-    graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor},
-    pci::Device,
-};
+use graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
+use pci::PciDevices;
+use pci::{read_bar, read_class_code, read_vendor_id, scan_all_bus, ClassCode, Device};
 
 const BG_COLOR: PixelColor = PixelColor(0, 80, 80);
 const FG_COLOR: PixelColor = PixelColor(255, 128, 0);
@@ -142,6 +151,10 @@ fn switch_echi_to_xhci(_xhc_dev: &Device, pci_devices: &PciDevices) {
 extern "C" fn kernel_main(fb: *mut FrameBuffer, mi: *mut ModeInfo) {
     initialize(fb, mi);
     welcome_message();
+
+    #[cfg(test)]
+    test_main();
+
     let pci_devices = list_pci_devices();
     let xhc = find_xhc(&pci_devices);
     let xhc = match xhc {
@@ -180,4 +193,27 @@ fn eh_personality() {}
 fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     loop {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    pub trait TestCaseFn {
+        fn run_test(&self);
+    }
+    impl<T: Fn()> TestCaseFn for T {
+        fn run_test(&self) {
+            print!("{} ... ", core::any::type_name::<T>());
+            self();
+            println!("Ok");
+        }
+    }
+
+    pub fn test_runner(tests: &[&dyn TestCaseFn]) {
+        println!("Running tests : {}", tests.len());
+        for test in tests {
+            test.run_test();
+        }
+        println!("done.");
+    }
 }

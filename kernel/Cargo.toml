@@ -9,7 +9,7 @@ x86_64 = "0.14.1"
 spin = { version = "0.9.0", features = ["lock_api", "mutex"] }
 
 [profile.dev]
-panic = "abort"
+panic="abort"
 
 
 
