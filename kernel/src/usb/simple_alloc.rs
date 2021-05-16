@@ -5,9 +5,8 @@ pub struct SimpleAlloc<const N: usize> {
     pool: [u8; N],
     current: usize,
     end: usize,
+    pub boundary: usize,
 }
-
-const BOUNDARY: usize = 4096;
 
 impl<const N: usize> SimpleAlloc<N> {
     pub const fn new() -> Self {
@@ -16,6 +15,7 @@ impl<const N: usize> SimpleAlloc<N> {
             pool,
             current: 0,
             end: 0,
+            boundary: 4096,
         }
     }
 
@@ -34,7 +34,7 @@ impl<const N: usize> SimpleAlloc<N> {
     pub fn alloc_mem(&mut self, size: usize, alignment: usize) -> Option<NonNull<[u8]>> {
         self.do_initialize();
         let mut ptr = Self::roundup(self.current, alignment);
-        let next_boundary = Self::roundup(self.current, BOUNDARY);
+        let next_boundary = Self::roundup(self.current, self.boundary);
         if next_boundary < ptr + size {
             ptr = next_boundary;
         }

@@ -111,6 +111,20 @@ pub struct OperationalRegisters {
     pub config: u32,
 }
 
+#[repr(C)]
+pub struct UsbCmd {
+    data: u32,
+}
+
+impl UsbCmd {
+    pub fn set_run_stop(&mut self, val: bool) {
+        self.data = bit_set(self.data, 0, val) as u32;
+    }
+    pub fn run_stop(&self) -> bool {
+        bit_get(self.data, 0)
+    }
+}
+
 pub struct Doorbell {
     data: u32,
 }
@@ -123,4 +137,20 @@ impl Doorbell {
     pub fn set_db_stream_id(&mut self, stream_id: u16) {
         self.data = self.data & 0x0000_ffff | (stream_id as u32) << 16;
     }
+}
+
+fn bit_set<T: Into<u64>>(target: T, index: usize, value: bool) -> u64 {
+    let v: u64 = 1 << index;
+    let target: u64 = target.into();
+    if value {
+        target | v
+    } else {
+        target & !v
+    }
+}
+
+fn bit_get<T: Into<u64>>(target: T, index: usize) -> bool {
+    let v: u64 = 1 << index;
+    let target: u64 = target.into();
+    (target & v) > 0
 }
