@@ -31,18 +31,18 @@ macro_rules! println {
     ($fmt:expr, $($arg:tt)*) => ($crate::print!(concat!($fmt, "\n"), $($arg)*));
 }
 
-#[macro_export]
+#[macro_export(local_inner_macro)]
 macro_rules! log {
     (level: $level:expr, $fmt:expr) => {
         if $level <= $crate::_log_level() {
             $crate::print!("{} - ", $level.as_str());
-            $crate::print!(concat!($fmt, "\n"));
+            $crate::print!(core::concat!($fmt, "\n"));
         }
     };
     (level: $level:expr, $fmt:expr, $($arg:tt)*) => {
         if $level <= $crate::_log_level() {
             $crate::print!("{} - ", $level.as_str());
-            $crate::print!(concat!($fmt, "\n"), $($arg)*);
+            $crate::print!(core::concat!($fmt, "\n"), $($arg)*);
         }
     };
 }
