@@ -1,4 +1,4 @@
-use crate::debug;
+use crate::{debug, trace};
 
 mod registers;
 mod simple_alloc;
@@ -28,21 +28,28 @@ impl<'a> Controller<'a> {
         let doorbell_first =
             (mmio_base + (cap_regs.db_off & 0xffff_fffc) as usize) as *mut Doorbell;
 
-        op_regs.usbcmd.set_intterupt_enable(false);
-        op_regs.usbcmd.set_host_system_error_enable(false);
-        op_regs.usbcmd.set_enable_wrap_event(false);
+        op_regs.usbcmd.modify(|usbcmd| {
+            usbcmd.set_intterupt_enable(false);
+            usbcmd.set_host_system_error_enable(false);
+            usbcmd.set_enable_wrap_event(false);
+        });
         if !op_regs.usbsts.hc_halted() {
             debug!("hc not halted");
-            op_regs.usbcmd.set_run_stop(false);
+            op_regs.usbcmd.modify(|usbcmd| usbcmd.set_run_stop(false));
         }
 
         while !op_regs.usbsts.hc_halted() {}
         debug!("hc halted");
 
         // reset controller
-        debug!("hc reset value; {}", op_regs.usbcmd.host_controller_reset());
-        op_regs.usbcmd.set_host_controller_reset(true);
-        while op_regs.usbcmd.host_controller_reset() {}
+        debug!(
+            "hc reset value; {}",
+            op_regs.usbcmd.read().host_controller_reset()
+        );
+        op_regs
+            .usbcmd
+            .modify(|usbcmd| usbcmd.set_host_controller_reset(true));
+        while op_regs.usbcmd.read().host_controller_reset() {}
         debug!("controller reset done.");
 
         let alloc = ALLOC.lock();

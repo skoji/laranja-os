@@ -13,6 +13,7 @@ pub mod graphics;
 pub mod log;
 pub mod pci;
 pub mod usb;
+pub mod volatile;
 
 use log::*;
 

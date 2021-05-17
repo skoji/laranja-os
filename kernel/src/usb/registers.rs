@@ -1,4 +1,5 @@
-use crate::{bit_getter, bit_setter, bitwise_macro};
+use crate::volatile::Volatile;
+use crate::{bit_getter, bit_setter};
 
 #[repr(C, packed(4))]
 pub struct CapabilityRegisters {
@@ -102,7 +103,7 @@ impl core::fmt::Display for HccParams1 {
 
 #[repr(C, packed(4))]
 pub struct OperationalRegisters {
-    pub usbcmd: UsbCmd,
+    pub usbcmd: Volatile<UsbCmd>,
     pub usbsts: UsbSts,
     pub pagesize: u32,
     pub _rsvd_1: [u32; 2],
