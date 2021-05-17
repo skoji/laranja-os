@@ -24,9 +24,9 @@ impl<'a> Controller<'a> {
         let cap_regs = &mut *(mmio_base as *mut CapabilityRegisters);
         debug!("cap regs: {}", cap_regs);
         let op_regs =
-            &mut *((mmio_base + cap_regs.cap_length as usize) as *mut OperationalRegisters);
+            &mut *((mmio_base + cap_regs.cap_length.read() as usize) as *mut OperationalRegisters);
         let doorbell_first =
-            (mmio_base + (cap_regs.db_off & 0xffff_fffc) as usize) as *mut Doorbell;
+            (mmio_base + (cap_regs.db_off.read() & 0xffff_fffc) as usize) as *mut Doorbell;
 
         op_regs.usbcmd.modify(|usbcmd| {
             usbcmd.set_intterupt_enable(false);
@@ -46,9 +46,9 @@ impl<'a> Controller<'a> {
             "hc reset value; {}",
             op_regs.usbcmd.read().host_controller_reset()
         );
-        op_regs
-            .usbcmd
-            .modify(|usbcmd| usbcmd.set_host_controller_reset(true));
+        op_regs.usbcmd.modify(|usbcmd| {
+            usbcmd.set_host_controller_reset(true);
+        });
         while op_regs.usbcmd.read().host_controller_reset() {}
         debug!("controller reset done.");
 

@@ -3,16 +3,16 @@ use crate::{bit_getter, bit_setter};
 
 #[repr(C, packed(4))]
 pub struct CapabilityRegisters {
-    pub cap_length: u8,
+    pub cap_length: Volatile<u8>,
     reserved: u8,
-    pub hci_version: u16,
-    pub hcs_params1: HscParam1,
-    pub hcs_params2: HscParam2,
-    pub hcs_params3: u32,
-    pub hcc_params1: HccParams1,
-    pub db_off: u32,
-    pub rts_off: u32,
-    pub hcc_params2: u32,
+    pub hci_version: Volatile<u16>,
+    pub hcs_params1: Volatile<HscParam1>,
+    pub hcs_params2: Volatile<HscParam2>,
+    pub hcs_params3: Volatile<u32>,
+    pub hcc_params1: Volatile<HccParams1>,
+    pub db_off: Volatile<u32>,
+    pub rts_off: Volatile<u32>,
+    pub hcc_params2: Volatile<u32>,
 }
 
 impl core::fmt::Display for CapabilityRegisters {
@@ -20,15 +20,15 @@ impl core::fmt::Display for CapabilityRegisters {
         write!(
             f,
             "cap_length: {}, hci_version: 0x{:02x}, hcs_params1: {}, hcs_params2: {}, hcs_params3: 0x{:08x}, hcc_params1: {}, db_off: 0x{:08x}, rts_off: 0x{:08x}, hcc_params2: 0x{:08x}",
-            self.cap_length,
-            self.hci_version,
-            self.hcs_params1,
-            self.hcs_params2,
-            self.hcs_params3,
-            self.hcc_params1,
-            self.db_off & 0xffff_fffc,
-            self.rts_off & 0xffff_ffe0,
-            self.hcc_params2
+            self.cap_length.read(),
+            self.hci_version.read(),
+            self.hcs_params1.read(),
+            self.hcs_params2.read(),
+            self.hcs_params3.read(),
+            self.hcc_params1.read(),
+            self.db_off.read() & 0xffff_fffc,
+            self.rts_off.read() & 0xffff_ffe0,
+            self.hcc_params2.read()
         )
     }
 }
