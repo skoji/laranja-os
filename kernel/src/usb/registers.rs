@@ -111,7 +111,7 @@ pub struct OperationalRegisters {
     pub crcr: u64,
     pub _rsvd_2: [u32; 4],
     pub dcbaap: u64,
-    pub config: u32,
+    pub config: Volatile<ConfigRegister>,
 }
 
 #[repr(C)]
@@ -139,6 +139,22 @@ pub struct UsbSts {
 
 impl UsbSts {
     bit_getter!(data:u32; 0, pub hc_halted);
+    bit_getter!(data:u32; 11, pub controller_not_ready);
+}
+
+#[repr(C)]
+pub struct ConfigRegister {
+    data: u32,
+}
+
+impl ConfigRegister {
+    pub fn set_max_device_slots_enabled(&mut self, val: u8) {
+        self.data |= val as u32;
+    }
+
+    pub fn max_device_slots_enabled(&mut self) -> u8 {
+        (self.data & 0xff) as u8
+    }
 }
 
 pub struct Doorbell {

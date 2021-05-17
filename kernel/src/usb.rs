@@ -22,7 +22,7 @@ impl<'a> Controller<'a> {
     /// mmio_base must be a valid base address for xHCI device MMIO
     pub unsafe fn new(mmio_base: usize) -> Self {
         let cap_regs = &mut *(mmio_base as *mut CapabilityRegisters);
-        debug!("cap regs: {}", cap_regs);
+        trace!("cap regs: {}", cap_regs);
         let op_regs =
             &mut *((mmio_base + cap_regs.cap_length.read() as usize) as *mut OperationalRegisters);
         let doorbell_first =
@@ -51,7 +51,13 @@ impl<'a> Controller<'a> {
         });
         while op_regs.usbcmd.read().host_controller_reset() {}
         debug!("controller reset done.");
-
+        while op_regs.usbsts.read().controller_not_ready() {}
+        debug!("controller is ready.");
+        let max_slots = cap_regs.hcs_params1.read().max_device_slots();
+        debug!("max device slots: {}", max_slots);
+        op_regs
+            .config
+            .modify(|config| config.set_max_device_slots_enabled(max_slots));
         let alloc = ALLOC.lock();
 
         Controller {
