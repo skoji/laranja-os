@@ -33,12 +33,12 @@ impl<'a> Controller<'a> {
             usbcmd.set_host_system_error_enable(false);
             usbcmd.set_enable_wrap_event(false);
         });
-        if !op_regs.usbsts.hc_halted() {
+        if !op_regs.usbsts.read().hc_halted() {
             debug!("hc not halted");
             op_regs.usbcmd.modify(|usbcmd| usbcmd.set_run_stop(false));
         }
 
-        while !op_regs.usbsts.hc_halted() {}
+        while !op_regs.usbsts.read().hc_halted() {}
         debug!("hc halted");
 
         // reset controller

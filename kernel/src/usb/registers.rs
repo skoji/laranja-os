@@ -104,7 +104,7 @@ impl core::fmt::Display for HccParams1 {
 #[repr(C, packed(4))]
 pub struct OperationalRegisters {
     pub usbcmd: Volatile<UsbCmd>,
-    pub usbsts: UsbSts,
+    pub usbsts: Volatile<UsbSts>,
     pub pagesize: u32,
     pub _rsvd_1: [u32; 2],
     pub dnctrl: u32,
