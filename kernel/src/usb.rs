@@ -22,7 +22,7 @@ impl<'a> Controller<'a> {
     /// mmio_base must be a valid base address for xHCI device MMIO
     pub unsafe fn new(mmio_base: usize) -> Self {
         let cap_regs = &mut *(mmio_base as *mut CapabilityRegisters);
-        trace!("cap regs: {}", cap_regs);
+        debug!("cap regs: {}", cap_regs);
         let op_regs =
             &mut *((mmio_base + cap_regs.cap_length.read() as usize) as *mut OperationalRegisters);
         let doorbell_first =

@@ -1,4 +1,7 @@
-use core::ptr::{slice_from_raw_parts_mut, NonNull};
+use core::{
+    mem::{align_of, size_of, MaybeUninit},
+    ptr::{slice_from_raw_parts_mut, NonNull},
+};
 
 #[repr(C, align(4096))]
 pub struct SimpleAlloc<const N: usize> {
@@ -48,5 +51,13 @@ impl<const N: usize> SimpleAlloc<N> {
             let r = unsafe { NonNull::new_unchecked(r) };
             Some(r)
         }
+    }
+
+    pub fn alloc_slice<T: 'static>(&mut self, len: usize) -> Option<NonNull<[MaybeUninit<T>]>> {
+        let align = align_of::<T>();
+        let size = size_of::<T>();
+        let buf = unsafe { self.alloc_mem(size * len, align)?.as_mut() };
+        let ptr = buf.as_mut_ptr() as *mut MaybeUninit<T>;
+        Some(unsafe { NonNull::new_unchecked(slice_from_raw_parts_mut(ptr, len)) })
     }
 }
