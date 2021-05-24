@@ -93,11 +93,18 @@ impl HccParams1 {
     pub fn xecp(&self) -> u16 {
         (self.data >> 16) as u16
     }
+    bit_getter!(data: u32; 2, context_size);
 }
 
 impl core::fmt::Display for HccParams1 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "0x{:08x} (xECP: 0x{:08x})", self.data, self.xecp())
+        write!(
+            f,
+            "0x{:08x} (xECP: 0x{:08x}, CSZ: {})",
+            self.data,
+            self.xecp(),
+            self.context_size()
+        )
     }
 }
 
