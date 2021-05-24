@@ -17,7 +17,7 @@ macro_rules! bit_setter {
 macro_rules! bit_getter {
     ($field:tt : $field_type:ty; $bit:literal, $vis:vis $name:ident) => {
         #[allow(dead_code)]
-        $vis fn $name(&mut self) -> bool {
+        $vis fn $name(&self) -> bool {
             let b: $field_type = 1 << $bit;
             (self.$field & b) == b
         }
