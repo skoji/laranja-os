@@ -1,5 +1,6 @@
-use crate::{debug, trace};
-
+use crate::debug;
+mod context;
+mod device_manager;
 mod registers;
 mod simple_alloc;
 
