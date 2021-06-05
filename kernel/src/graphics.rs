@@ -1,5 +1,5 @@
 use crate::ascii_font::FONTS;
-use crate::{print, println};
+use crate::println;
 use core::mem::MaybeUninit;
 
 #[derive(Debug, Copy, Clone)]

@@ -1,5 +1,11 @@
 #!/bin/sh
-IMG_NAME=LARANJA.img
+
+if [ -z "$1" ];  then
+   IMG_NAME=LARANJA.img
+else
+   IMG_NAME="$1"
+fi
+    
 MOUNT_POINT=./mnt
 
 if [ "`uname`" = "Darwin" ]; then
