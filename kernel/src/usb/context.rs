@@ -1,15 +1,15 @@
 #[repr(C, align(32))]
-struct SlotContext {
+pub struct SlotContext {
     data: [u32; 8],
 }
 
 #[repr(C, align(32))]
-struct EndpointContext {
+pub struct EndpointContext {
     data: [u32; 8],
 }
 
 #[repr(C, align(64))]
-struct DeviceContext {
+pub struct DeviceContext {
     slot_context: SlotContext,
     endpoint_contexts: [EndpointContext; 31],
 }
