@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(asm)]
 #![feature(lang_items)]
 #![feature(custom_test_frameworks)]
 #![test_runner(tests::test_runner)]
@@ -18,6 +17,7 @@ pub mod volatile;
 use log::*;
 
 use console::Console;
+use core::arch::asm;
 use core::panic::PanicInfo;
 use graphics::{FrameBuffer, Graphics, ModeInfo, PixelColor};
 use pci::PciDevices;

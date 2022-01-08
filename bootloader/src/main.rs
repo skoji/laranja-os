@@ -1,5 +1,4 @@
 #![feature(abi_efiapi)]
-#![feature(asm)]
 #![feature(alloc_error_handler)]
 #![no_std]
 #![no_main]
@@ -8,6 +7,7 @@
 extern crate alloc;
 use alloc::string::ToString;
 use console::gop;
+use core::arch::asm;
 use core::fmt::Write;
 use elf_rs::*;
 use proto::console;
