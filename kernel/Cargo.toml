@@ -2,7 +2,7 @@
 name = "laranja-kernel"
 version = "0.1.0"
 authors = ["Satoshi Kojima <skoji@skoji.jp>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 x86_64 = "0.14.1"
