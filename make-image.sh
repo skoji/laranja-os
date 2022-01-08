@@ -7,12 +7,11 @@ else
 fi
     
 MOUNT_POINT=./mnt
+    MKFS_FAT=mkfs.fat
 
 if [ "`uname`" = "Darwin" ]; then
-    MKFS_FAT=/usr/local/opt/dosfstools/sbin/mkfs.fat
     SUDO=''
 else
-    MKFS_FAT=mkfs.fat
     SUDO=sudo
 fi
 
