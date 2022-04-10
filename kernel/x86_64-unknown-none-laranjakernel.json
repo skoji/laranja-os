@@ -8,7 +8,6 @@
   "executables": true,
   "linker": "ld.lld",
   "linker-flavor": "ld",
-  "has-elf-tls": true,
   "has-rpath": true,
   "is-builtin": false,
   "linker-is-gnu": true,
@@ -24,7 +23,6 @@
     ]
   },
   "relocation-model": "static",
-  "no-redzone": "yes",
   "relro-level": "full",
   "stack-probes": {
     "kind": "inline-or-call",
